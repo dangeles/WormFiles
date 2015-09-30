@@ -29,11 +29,15 @@ import lifelines as lf
 
 font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 22}
+        'size'   : 30}
 plt.rc('font', **font)
 
 
+
+maxI= 5#last day for which brood sizes are known
+
 k= 0
+k2= 0
 df_lifespan= pd.read_csv(
 '../input/cas9_unc54_injection_survival_rate_13_september_2015.csv', sep= ';')
 
@@ -155,9 +159,6 @@ fig.savefig('../output/Lifetime Plot for pred-unc-54 cas9 injected females (gene
 # # Brood size analysis
 #==============================================================================
 #==============================================================================
-maxI= 4 #last day for which brood sizes are known
-
-
 plt.clf()
 ax1= plt.subplots(figsize= (16, 16))
 ax1= df_brood_size.Day1[df_lifespan.Day1==1].plot(style= 'bo', label= 'Day 1', alpha= 0.8)
@@ -245,17 +246,17 @@ fig, ax1= plt.subplots(figsize= (16, 16))
 
 for i in range(0, 2):
     if i == 0:
-        s= 'Dead'
+        s= 'Alive'
         col= 'g'
     else:
-        s= 'Alive'
+        s= 'Dead'
         col= 'b'
 #    ax1= plt.gca()
     #Add a little gaussian noise to lifespan:
     x= df_brood_size.Lifespan[df_brood_size.Event==i].values
     x_noise= np.random.normal(0, np.max(x)/100, len(x))
     ax1.scatter(x+x_noise,
-                df_brood_size.total_brood[df_brood_size.Event==i], s= 100, c= col, alpha= 0.6,\
+                df_brood_size.total_brood[df_brood_size.Event==i], s= 250, c= col, alpha= 0.6,
                 label= s)
 ax1.set_ylim(-5, 1.25*np.max(df_brood_size.total_brood))
 ax1.set_xlim(0, 7)
@@ -267,21 +268,69 @@ ax1.xaxis.set_ticks_position('bottom')
 ax1.yaxis.set_ticks_position('left')
 ax1.legend(loc= 'upper right', fancybox=True, framealpha=0.5, numpoints=1, scatterpoints= 1)
 ax1.set_title('Brood Size per P0 vs Lifespan of P0')
-plt.savefig('../output/BroodSize vs Lifespan, cas9 pred-unc54 injection.png')
+plt.savefig('../output/BroodSize vs Lifespan cas9 pred-unc54 injection.png')
 
 
 
 
-brooddays= df_brood_size.Day1[df_brood_size.P0_Number.isin(df_bags.P0_Number.values)].values\
- + df_brood_size.Day2[df_brood_size.P0_Number.isin(df_bags.P0_Number.values)].values
+
+p0s_in_bags= df_bags.P0_Number.values
 total_size= df_brood_size.total_brood\
-[df_brood_size.P0_Number.isin(df_bags.P0_Number.values)].values+1 #plus one so log plot doesn't freak
+[df_brood_size.P0_Number.isin(p0s_in_bags)].values
+
+
 bags= df_bags.Day1+df_bags.Day2
-fig, ax= plt.subplots(figsize = (8, 8))
-plt.plot(total_size, bags/total_size, 'o', markersize= 15)
+if k2== 0:
+    temp= list(df_bags)
+    temp.remove('P0_Number')
+    df_bags['total_bags']= df_bags[temp].sum(axis=1).values
+    df_bags['total_brood']= total_size
+    df_bags['Lifespan']= df_lf['Lifespan'][df_lf.p0.isin(p0s_in_bags)].values
+    df_bags['Event']= df_lf['Event'][df_lf.p0.isin(p0s_in_bags)].values
+    k2=1
+    
+df_bags['inv_total_brood']= 1/df_bags.total_brood.values  
+df_bags['ratio']= df_bags['total_bags']/df_bags['total_brood']
+
+
+
+xlim_max= 10**3
+fig, ax= plt.subplots(figsize = (16, 16))
+
+plt.plot(df_bags['total_brood']+1, df_bags['ratio'], 'o', markersize= 15) #plus one so log plot doesn't freak
+
+no_bags= df_brood_size.total_brood[~df_brood_size.P0_Number.isin(p0s_in_bags)]
+plt.plot(no_bags+1, np.zeros(len(no_bags)), 'o', markersize= 15) #plus one so log plot doesn't freak
+
+plt.hlines(np.median(df_bags['total_bags']/df_bags['total_brood']),0, xlim_max, 
+           linestyles= '-', label= 'median no. bags per p0')
+
+#plt.hlines(np.sum(df_bags['total_bags']/df_bags['total_brood'])/df_brood_size.shape[0], 
+#           0, xlim_max, linestyles= '-', label= 'average bags per p0')
+
+
+#plt.hlines(np.std(df_bags['total_bags']/df_bags['total_brood'])+
+#           np.mean(df_bags['total_bags']/df_bags['total_brood']),0, xlim_max, 
+#           linestyles= '--', label= 'average bags per p0')
+
+
+
+ax.set_xlim(1, xlim_max)
 ax.set_xscale('log')
-ax.set_ylim(-.1, np.max(bags/total_size)+.1)
+ax.set_xlabel('Total Brood Size')
+ax.set_ylabel('Bags/Total Brood Size')
+ax.set_ylim(-.01, .3)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
+ax.legend(loc= 'upper right', fancybox=True, framealpha=0.5, numpoints=1, scatterpoints= 1)
+ax.set_title('Jackpot Plot',  y=1.08)
+plt.savefig('../output/Jackpot plot, unc54 injection 13 Sept 2015.png')
+
+pd.set_option('display.float_format', lambda x: '%.2f' % x)
+print(df_bags[['total_brood', 'total_bags', 'ratio']].sort('ratio'))
+pd.set_option('display.float_format', lambda x: '%.7f' % x)
+
+
+#

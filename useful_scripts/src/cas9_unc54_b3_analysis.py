@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu Oct 15 17:53:47 2015
+
+@author: davidangeles
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Sep 22 21:48:17 2015
 A script to analyze the survival and brood size data of female P. red worms
 injected with cas9.
@@ -37,16 +44,19 @@ plt.rc('font', **font)
 maxI= 3#last day for which brood sizes are known
 
 
-strain_made= 'cas-9 unc-54'
+strain_made= 'cas-9 unc-54 b3'
 k= 0
 k2= 0
+k3= 0
 df_lifespan= pd.read_csv(
-'../input/cas9_unc54_injection_survival_rate_13_september_2015.csv', sep= ';')
+'../input/cas9_unc54_injection_survival_rate_06_october_2015.csv', sep= ',')
 
 df_brood_size= pd.read_csv(
-'../input/brood_size_cas9_unc54_13_sept_2015.csv', sep= ';')
+'../input/cas9-unc54-b3-broodsize-10-06-2015.csv', sep= ',')
 df_bags= pd.read_csv(
-'../input/unc54_cas9_injection_13sept2015_bags_of_worms_found.csv', sep= ';')
+'../input/cas9-unc54-b3-bags-10-06-2015.csv', sep= ',')
+df_mutants= pd.read_csv(
+'../input/cas9-unc54-b3-mutants-10-06-2015.csv', sep= ',')
 
 #==============================================================================
 # 
@@ -106,7 +116,7 @@ kmf.fit(df_lf.Lifespan, df_lf.Event) # more succiently, kmf.fit(T,E)
 kmf.survival_function_
 kmf.median_
 ytcs= [0, .5, 1, 1.1]
-fig,ax1= plt.subplots(figsize= (16, 16))
+fig,ax1= plt.subplots(figsize= (16,16))
 ax1= kmf.plot(ax= ax1)
 ax1.set_ylim(0, 1.1)
 ax1.set_title('Survival Curve')
@@ -261,7 +271,7 @@ for i in range(0, 2):
                 df_brood_size.total_brood[df_brood_size.Event==i], s= 250, c= col, alpha= 0.6,
                 label= s)
 ax1.set_ylim(-5, 1.25*np.max(df_brood_size.total_brood))
-ax1.set_xlim(0, 7)
+ax1.set_xlim(0, int(maxI)+1)
 ax1.set_xlabel('P0 Lifespan (Days Post-Injection)')
 ax1.set_ylabel('Brood Size per P0')
 ax1.spines['top'].set_visible(False)
@@ -281,7 +291,6 @@ total_size= df_brood_size.total_brood\
 [df_brood_size.P0_Number.isin(p0s_in_bags)].values
 
 
-bags= df_bags.Day1+df_bags.Day2
 if k2== 0:
     temp= list(df_bags)
     temp.remove('P0_Number')
@@ -296,20 +305,33 @@ df_bags['ratio']= df_bags['total_bags']/df_bags['total_brood']
 
 
 
+
+p0s_in_mutants= df_mutants.P0_Number.values
+if k3== 0:
+    temp= list(df_mutants)
+    temp.remove('P0_Number')
+    df_mutants['total_mutants']= df_mutants[temp].sum(axis=1).values
+    df_mutants['total_brood']= total_size
+    df_mutants['Lifespan']= df_lf['Lifespan'][df_lf.p0.isin(p0s_in_mutants)].values
+    df_mutants['Event']= df_lf['Event'][df_lf.p0.isin(p0s_in_mutants)].values
+    k3=1
+    
+df_mutants['inv_total_brood']= 1/df_mutants.total_brood.values  
+df_mutants['ratio']= df_mutants['total_mutants']/df_mutants['total_brood']
+
+df_mutants= df_mutants.replace([np.inf, -np.inf], np.nan)
+
+
 xlim_max= 10**3
 fig, ax= plt.subplots(figsize = (16, 16))
 
-plt.plot(df_bags['total_brood']+1, df_bags['ratio'], 'o', markersize= 15) #plus one so log plot doesn't freak
+plt.plot(df_bags['total_brood']+1, df_bags['ratio'], 'o', markersize= 15,\
+label= 'bags') #plus one so log plot doesn't freak
+plt.plot(df_mutants['total_brood']+1, df_mutants['ratio'], 'o', markersize= 13, label= 'other_mutants') #plus one so log plot doesn't freak
 
-no_bags= df_brood_size.total_brood[~df_brood_size.P0_Number.isin(p0s_in_bags)]
-plt.plot(no_bags+1, np.zeros(len(no_bags)), 'o', markersize= 15) #plus one so log plot doesn't freak
 
 plt.hlines(np.median(df_bags['total_bags']/df_bags['total_brood']),0, xlim_max, 
            linestyles= '-', label= 'median no. bags per p0')
-
-#plt.hlines(np.sum(df_bags['total_bags']/df_bags['total_brood'])/df_brood_size.shape[0], 
-#           0, xlim_max, linestyles= '-', label= 'average bags per p0')
-
 
 #plt.hlines(np.std(df_bags['total_bags']/df_bags['total_brood'])+
 #           np.mean(df_bags['total_bags']/df_bags['total_brood']),0, xlim_max, 
@@ -331,8 +353,52 @@ ax.set_title('Jackpot Plot',  y=1.08)
 plt.savefig('../output/Jackpot plot, {0}.png'.format(strain_made))
 
 pd.set_option('display.float_format', lambda x: '%.2f' % x)
-print(df_bags[['total_brood', 'total_bags', 'ratio']].sort('ratio'))
+print(df_bags[['total_brood', 'total_bags', 'ratio']].dropna().sort('ratio'))
 pd.set_option('display.float_format', lambda x: '%.7f' % x)
 
 
-#
+
+
+
+
+#total 'edited' visible larvae: 118
+x= df_bags.P0_Number[df_bags.total_bags > 0].values
+y= df_mutants.P0_Number[df_mutants.total_mutants>0].values
+z= np.append(x, y)
+z= np.unique(z)
+
+print(len(z))
+print(len(df_bags))
+print(len(z)/len(df_bags))
+
+
+
+xlim_max= 10**3
+fig, ax= plt.subplots(figsize = (16, 16))
+
+plt.plot(df_bags['total_brood']+1, np.sqrt(df_bags['ratio']+df_mutants['ratio'])*df_bags['total_brood'], 'o', markersize= 15,\
+label= 'max_edit_freq') #plus one so log plot doesn't freak
+plt.plot(df_bags['total_brood']+1, (df_bags['ratio']+df_mutants['ratio'])*df_bags['total_brood'], 'go', markersize= 13,\
+label= 'min_edit_freq') #plus one so log plot doesn't freak
+
+
+ax.set_xlim(1, xlim_max)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel('Total Brood Size')
+ax.set_ylabel('Projected Edited Larvae')
+ax.set_ylim(1, xlim_max)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+ax.legend(loc= 'upper right', fancybox=True, framealpha=0.5, numpoints=1, scatterpoints= 1)
+ax.set_title('Upper and Lower Bounds of Edit Frequency',  y=1.08)
+lims = [
+    np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
+    np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
+]
+
+# now plot both limits against eachother
+ax.plot(lims, lims, 'k-', alpha=0.75, zorder=0)
+plt.savefig('../output/Editing Bounds Estimate {0}.png'.format(strain_made))

@@ -17,7 +17,7 @@ import numpy as np
 
 #given an exon, and a PAM motif, make sgRNAs, their primers and primers for 
 #30bp homology to gfp
-exon_name= 'unc_54_exon4'
+exon_name= 'nlp-40'
 pam= 'ggngg' #desired motif to look for
 guide_begins= 2 #position in pam where the sgRNA should start. 0 if pam= 'ngg', 2 if pam='ggngg'
 gfpF= 'GGATCAGGTGGAGGAGGTGGAG'
@@ -40,7 +40,7 @@ preference= 'append' #choose between 'append', 'replace' and 'none
 #the gibson sequences to be appended to the oligo
 gibson5prime= 'GATCCCCCGGGCTGCAGGAATTCATTTAGGTGACACTATA'
 gibson3prime= 'GACTAGCCTTATTTTAACTTGCTATTTCTAGCTCTAAAAC'
-exon= 'ACCTACTCTGGTCTCTTCTGCGTTGTGATCAACCCCTACAAGCGCCTTCCCATCTACACCGACTCGGTTGCCCGCATGTTCATGGGCAAGCGTAAGACTGAGATGCCTCCCCATCTCTTCGCCGTCTCTGATGAAGCCTACCGTAACATGCTTCAAGATCACGAGAACCAGTCCATGTTGATCACTGGTGAATCTGGTGCCGGTAAGACCGAAAACACCAAGAAGGTTATTGCCTACTTCGCCGCTGTCGGTGCCTCCCAGCAGGAAGCCGAGACCGGCAAGCCCGCCGACACTGGCGAGAAGAAGGTCACCCTTGAGGACCAGATCGTCCAGACCAACCCCGTGTTGGAAGCCTTCGGTAACGCCAAGACCGTGCGTAACAACAACTCCTCCCGTTTCGGTAAATTCATCCGTATCCACTTCAACCGTGCTGGCCGTGTCGCTTCTTGCGATATTGAACACT' #in frame!
+exon= 'ATGACGGTCACAGCGCGTGTTCTCGTCGGGATTGTCCTTGGATTTGTAATCGTTGCGGTAGCTTTTGGTGCCCCCGCGCCAGCTGCCCCGATGAAGCCATCGCCCGATCTCAATGCCCGCATCGCTGCCCTGAAGCAACAACTCGATCAAATCGAAACAGCTCTATCCCAGGGCCAACAGCCATCGATTGCCTTAGCCCCTCAGGCAGCTCCGTCCACTCTACTTCAGCCGCGCGAAGACCGATCCGCCGCCTGGCAACCGATGCGTCGCATGGTGGCATGGCAGCCCATGAAGCGTACCCCATTGAATCCGCAAGTACAACGCGATCAAGTCATCCGAACTATCGAAGCCCAACTTAGCGAAGTCCTGCACGCCGGAGAAGTCCTCGGAGTATCCGCTGAAGACGTCCTCGCCCATTTGAGGCAACGGAACGGCTACGATAATACCCTTGGCCTTGGAAGTTTAGAGTGA' #in frame!
 
 exon= exon.lower()
 size_pam= len(pam)
@@ -257,18 +257,21 @@ def trim_and_score(df, n= 0, q= .75):
             df= df[df.begins_with_g == 1]
             l= float(len(df))
             nq= 1- n/l            
-            
-            attempt= df[df.score > df.score.quantile(nq)]
-
-            while len(attempt) != n:
-                nq= nq-1/l
-                attempt= df[df.score > df.score.quantile(nq)] 
-            return df[df.score > df.score.quantile(nq)]
+#            print(nq, 'first if')
+            if n>= len(df):
+                return df
+            else:
+                attempt= df[df.score > df.score.quantile(nq)]
+                
+                while len(attempt) != n:
+                    nq= nq-1/l
+                    attempt= df[df.score > df.score.quantile(nq)] 
+                return df[df.score > df.score.quantile(nq)]
             
         else:
             l= float(len(df))
             nq= 1-n/l
-            l= float(len(df))
+#            print(nq, 'seond')
             attempt= df[df.score > df.score.quantile(nq)]
             
             while len(attempt) != n:

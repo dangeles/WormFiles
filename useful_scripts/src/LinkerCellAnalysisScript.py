@@ -41,22 +41,38 @@ ax.set_xscale('log')
 #WT linker cell:
 df['WT_LC_max']= df[['L3', 'L4']].apply(np.max, 1)
 df['ratio']= df['WT_LC_max']/(df['N2']+10**-5)
+df['ratioMT']= df['WT_LC_max']/(df['nhr67']+10**-5)
 
 fig, ax = plt.subplots()
-df.ratio[df.ratio > 10**5].hist(ax=ax, bins=bins, bottom=0.1)
+df.ratioMT[df.ratioMT > 10**6].hist(ax=ax, bins=bins, bottom=0.1)
 ax.set_yscale('log')
 ax.set_xscale('log')
 
-names= df.Gene[df.ratio > 10**5].values
 
-f= open('../output/ListOfNamesWithRatio1mill.csv', 'w')
+n= -1
+names= df.Gene[df.ratio > 10**n].values
+namesMT= df.Gene[df.ratioMT > 10**n].values
+#fix name formatting to get into WBID format
+#all WBIDs are 14 chars long, but you could use lambda functions to remove
+#formatting as well. but i'm too lazy to do this in proper program form
+#g= lambda x: x.find('|')
+#end= map(g, names)
+
+g= lambda x: x[0:14]
+names= map(g, names)
+namesMT= map(g, namesMT)
+
+f= open('../output/ListOfNamesWithRatio{0}mill.csv'.format(n), 'w')
 for name in names:
     f.write(name)
     f.write('\n')
 f.close()
 
-
-dfWBID= pd.read_csv('../output/ListOfNamesWithRatio1mill_WBID.csv', header= None, names= ['WBID'])
+f= open('../output/ListOfNamesWithRatio{0}millMT.csv'.format(n), 'w')
+for name in namesMT:
+    f.write(name)
+    f.write('\n')
+f.close()
 
 
 
@@ -72,15 +88,10 @@ dfWBID= pd.read_csv('../output/ListOfNamesWithRatio1mill_WBID.csv', header= None
 #==============================================================================
 #==============================================================================
 
-from __future__ import division, print_function, absolute_import
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.special
 from scipy import stats
-from scipy import optimize
-from scipy import misc
-import os
 
 #path= 'Users/dangeles/github/WormFiles/tissue_enrichment_hgf/tissue_enrichment/src"
 #os.chdir(path)
@@ -118,7 +129,7 @@ def pass_list(user_provided, tissue_dictionary):
     
     #go through and pass attendance -- 1 if present, 0 otherwise
     for item in user_provided:
-        present.provided[present.wbid== item]= 1
+        present.provided[present.wbid==item]= 1
         
     #remove NA's and make them 0
     present.provided= present.provided.fillna(0)
@@ -300,5 +311,18 @@ def implement_hypergmt_enrichment_tool(gene_list, tissue_df= tissue_df, alpha= 0
 
 
 #Run the whole thing:
-q, p= implement_hypergmt_enrichment_tool(names, tissue_df)
+q, p= implement_hypergmt_enrichment_tool(names, tissue_df, 0.1)
+q2, p2= implement_hypergmt_enrichment_tool(namesMT, tissue_df, 0.1)
 #q2= implement_hypergmt_enrichment_tool(gene_list2, tissue_df)
+
+#
+#for key in q:
+#    print(key, '\tq: {0:.2}'.format(q[key]), '\tp: {0:.2}'.format(p[key]))
+#print('\n')
+#for values in sorted(p, key= p.get):
+#    print(values, '{0:.2}'.format(p[values]))
+for values in sorted(q, key= q.get):
+    if q[values] < 1:
+        print(values, '{0:.2}'.format(q[values]))
+    else:
+        print(values, '{0}'.format(q[values]))

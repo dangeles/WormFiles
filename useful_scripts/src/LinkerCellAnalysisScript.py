@@ -1,13 +1,76 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
-Author: David Angeles
-Date: May 26, 2015
-A script to implement a hypergeometric test
-Needs:
-A tissue dictionary
-A control list of gene names
-An experimental list of gene names
+Created on Sun Dec  6 11:56:42 2015
+
+@author: davidangeles
+
+Script for analysis of Mihoko's linker cell data
 """
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+sys.path.insert(0, '/Users/davidangeles/github/tissue_enrichment_tool_hypergeometric_test/src/')
+
+import hypergeometricTests.py
+
+df= pd.read_csv('../input/linker_8k_genes_initial_05jun2011.csv', sep= '\t') 
+
+x= np.linspace(0, len(df.columns)-1, len(df.columns)) #column numbers
+df.drop(df.columns[map(int, x[5:])], axis= 1, inplace=1)
+
+df.rename(columns= {'nhr-67': 'nhr67'}, inplace= True)
+df.L3= df.L3/df.L3.sum()*10**6
+df.L4= df.L4/df.L4.sum()*10**6
+df.nhr67= df.nhr67/df.nhr67.sum()*10**6
+df.N2= df.N2/df.N2.sum()*10**6
+
+
+fig, ax = plt.subplots()
+bins= np.floor(np.sqrt(len(df)))
+df.L3.hist(ax=ax, bins=bins, bottom=0.1)
+df.L4.hist(ax=ax, bins=bins, bottom=0.1)
+df.N2.hist(ax=ax, bins=bins, bottom=0.1)
+df.nhr67.hist(ax=ax, bins=bins, bottom=0.1)
+ax.set_yscale('log')
+ax.set_xscale('log')
+
+
+#WT linker cell:
+df['WT_LC_max']= df[['L3', 'L4']].apply(np.max, 1)
+df['ratio']= df['WT_LC_max']/(df['N2']+10**-5)
+
+fig, ax = plt.subplots()
+df.ratio[df.ratio > 10**5].hist(ax=ax, bins=bins, bottom=0.1)
+ax.set_yscale('log')
+ax.set_xscale('log')
+
+names= df.Gene[df.ratio > 10**5].values
+
+f= open('../output/ListOfNamesWithRatio1mill.csv', 'w')
+for name in names:
+    f.write(name)
+    f.write('\n')
+f.close()
+
+
+dfWBID= pd.read_csv('../output/ListOfNamesWithRatio1mill_WBID.csv', header= None, names= ['WBID'])
+
+
+
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+# # # # # 
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
 
 from __future__ import division, print_function, absolute_import
 import pandas as pd
@@ -31,7 +94,7 @@ import os
 #gene_list2= genes2[genes2.columns[0]].values
 
 
-tissue_df= pd.read_csv("Users/dangeles/github/WormFiles/tissue_enrichment_hgf/input/smalldictionary.txt")
+tissue_df= pd.read_csv("/Users/davidangeles/github/WormFiles/tissue_enrichment_hgf/input/smalldictionary.txt")
 #==============================================================================
 # 
 #==============================================================================
@@ -217,15 +280,25 @@ def implement_hypergmt_enrichment_tool(gene_list, tissue_df= tissue_df, alpha= 0
     
     q_hash= return_enriched_tissues(p_hash, alpha)
     
-    return q_hash
+    return q_hash, p_hash
 #==============================================================================
 #     
 #==============================================================================
-
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+# # # # # 
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#==============================================================================
 
 
 
 
 #Run the whole thing:
-#q1= implement_hypergmt_enrichment_tool(gene_list1, tissue_df)
+q, p= implement_hypergmt_enrichment_tool(names, tissue_df)
 #q2= implement_hypergmt_enrichment_tool(gene_list2, tissue_df)

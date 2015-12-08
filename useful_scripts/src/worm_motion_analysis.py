@@ -70,7 +70,7 @@ for name in new_names[1:]:
         ax.yaxis.set_ticks_position('left')
         ax.set_xlim(xaxis[0], xaxis[len(xaxis)-1])
         plt.savefig('../output/'+worm_name+'_'+name+time.strftime("%d_%m_%Y")+'.png')
-        
+d        
 
 
 

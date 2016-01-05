@@ -15,7 +15,7 @@ from scipy import stats
 
 
 #log of the fold change of ratios that will be considered
-n= 1
+n= -1
 
 
 df= pd.read_csv('../input/linker_8k_genes_initial_05jun2011.csv', sep= '\t') 
@@ -34,7 +34,7 @@ df.N2= df.N2/df.N2.sum()*10**6
 
 
 #calculate some ratios of interest to use for selection of genes of interest:
-corr= 10**-2# correction added to reads so that no 0 reads are present 
+corr= 10**-6# correction added to reads so that no 0 reads are present 
 df['WT_LC_max']= df[['L3', 'L4']].apply(np.max, 1) #choose max expr. btwn L3,L4
 df['ratio']= (df['WT_LC_max']+corr)/(df['N2']+corr) #ratio between max(L3,L4)/N2
 df['ratioMT']= (df['WT_LC_max']+corr)/(df['nhr67']+corr) 

@@ -1,0 +1,49 @@
+# These data were acquired by the students of Bi 1x at
+# Caltech in the spring term of 2015.  Each group of
+# students had three worms each of wild type (WT),
+# opsin on the AVA neuron (AVA), and opson on the ASH
+# neuron (ASH).  The worms were exposed to blue light
+# and the students recorded whether or not the worm
+# reversed.
+#
+# The key for reversals:
+#  1: The worm reversed
+#  0: The worm did not reverse
+# -1: One of the three worms were lost (many were freshmen, after all)
+Group,Worm,WT,AVA,ASH
+Group B1,worm 1,0,1,1
+Group B1,worm 2,0,1,0
+Group B1,worm 3,0,1,0
+Group B2,worm 1,0,1,0
+Group B2,worm 2,0,1,0
+Group B2,worm 3,0,1,0
+Group B3,worm 1,0,1,1
+Group B3,worm 2,0,1,1
+Group B3,worm 3,0,1,0
+Group B4,worm 1,0,1,0
+Group B4,worm 2,0,1,0
+Group B4,worm 3,0,1,0
+Group B5,worm 1,0,1,1
+Group B5,worm 2,0,1,1
+Group B5,worm 3,0,1,0
+Group B6,worm 1,0,0,1
+Group B6,worm 2,0,1,1
+Group B6,worm 3,0,1,0
+Group A1,worm 1,0,1,0
+Group A1,worm 2,0,1,0
+Group A1,worm 3,-1,1,0
+Group A2,worm 1,0,1,0
+Group A2,worm 2,0,1,0
+Group A2,worm 3,0,1,0
+Group A3,worm 1,0,1,1
+Group A3,worm 2,0,1,-1
+Group A3,worm 3,0,0,1
+Group A4,worm 1,0,1,0
+Group A4,worm 2,0,1,0
+Group A4,worm 3,0,1,0
+Group A5,worm 1,0,1,0
+Group A5,worm 2,0,1,0
+Group A5,worm 3,0,1,0
+Group A6,worm 1,0,0,0
+Group A6,worm 2,0,1,0
+Group A6,worm 3,0,1,0

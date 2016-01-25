@@ -334,6 +334,7 @@ def implement_hypergmt_enrichment_tool(analysis_name, gene_list, \
     with open(dirEnrichment+'/'+f, 'w') as file:
         file.write('#Tissue Enrichment Analysis for {0}\n'.format(analysis_name))
         file.write('Tissue,Expected,Observed, Fold Change,Q value\n')
+        
         for tissue, qval in q_hash.items():
             if qval < alpha:
                 
@@ -453,7 +454,6 @@ array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
                 'namesA0neg', 'namesG0neg', 'namesAG0neg'
                 ]
                 
-
 dirLists= '../output/Gene_lists_for_analysis'
 if not os.path.exists(dirLists):
     os.makedirs(dirLists)
@@ -463,19 +463,16 @@ if not os.path.exists(dirLists):
     os.makedirs(dirGraphs)
     
 
-
 n_bars= 15 #number of results to plot bars for
 #run the whole thing for each dataset
-for i, list_of_genes in enumerate(array_of_arrays):
-    
+for i, list_of_genes in enumerate(array_of_arrays):    
     #run the tissue enrichment tool 
     aname= array_of_anames[i] #name of the analysis
     fname= array_of_fnames[i] #filename to store as
     df_analysis= \
     implement_hypergmt_enrichment_tool(aname, list_of_genes,\
                                     tissue_df, qvalEn, f= fname)
-    
-    
+
     #plotting:
     #set index as tissue 
     df_analysis.set_index('Tissue', inplace= True)

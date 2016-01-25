@@ -231,7 +231,7 @@ def benjamin_hochberg_stepup(p_vals):
     for i, p in enumerate(p_vals):
         q= len(p_vals)/(i+1)*p #calculate the q_value for the current point
         q= min(q, 1) #if q >1, make it == 1
-        q= max(q, prev_q) #preserve monotonicity, since at endpoints the procedure sometimes makes it so that prev_q > new_q
+        q= max(q, prev_q) #preserve monotonicity
         q_vals[i]= q #store the q_value
         prev_q= q #update the previous q_value
         
@@ -353,8 +353,33 @@ def implement_hypergmt_enrichment_tool(analysis_name, gene_list, \
                 
                 file.write('{0:.3}'.format(qval))
                 file.write('\n')
+                
+                
+    #write results to a dataframe. 
+    columns= ['Tissue', 'Expected', 'Observed', 'Fold Change', 'Q value']
+    df_final= pd.DataFrame(index=np.arange(len(q_hash)), columns=columns)
+
     
-    return q_hash#, p_hash
+    i=0    
+    for tissue, qval in q_hash.items():
+        if qval < alpha:
+            
+            expected= exp_hash[tissue]
+            observed= wanted_dic[tissue].sum()
+            
+            df_final['Tissue'].ix[i]= tissue
+            df_final['Expected'].ix[i]= expected
+            df_final['Observed'].ix[i]= observed
+            df_final['Fold Change'].ix[i]= observed/expected
+            df_final['Q value'].ix[i]= qval
+            i+=1
+    df_final.dropna(inplace= True)
+    df_final['Expected']= df_final['Expected'].astype(float)    
+    df_final['Observed']= df_final['Observed'].astype(float)    
+    df_final['Fold Change']= df_final['Fold Change'].astype(float)    
+    df_final['Q value']= df_final['Q value'].astype(float)    
+    
+    return df_final#, p_hash
 #==============================================================================
 #     
 #==============================================================================
@@ -427,27 +452,71 @@ array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
                 'namesA0', 'namesG0', 'namesAG0',
                 'namesA0neg', 'namesG0neg', 'namesAG0neg'
                 ]
+                
+
 dirLists= '../output/Gene_lists_for_analysis'
 if not os.path.exists(dirLists):
     os.makedirs(dirLists)
+    
+dirGraphs= '../output/Graphs'
+if not os.path.exists(dirLists):
+    os.makedirs(dirGraphs)
+    
 
 
-
+n_bars= 15 #number of results to plot bars for
 #run the whole thing for each dataset
 for i, list_of_genes in enumerate(array_of_arrays):
+    
     #run the tissue enrichment tool 
     aname= array_of_anames[i] #name of the analysis
     fname= array_of_fnames[i] #filename to store as
-    q= implement_hypergmt_enrichment_tool(aname, list_of_genes, tissue_df, qvalEn, f= fname)
+    df_analysis= \
+    implement_hypergmt_enrichment_tool(aname, list_of_genes,\
+                                    tissue_df, qvalEn, f= fname)
     
     
-    #save genes with betas significantly different from zero in a list format
-    k= array_of_strings[i][5:]
-            
-    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
-    #print('filename', filename)
-    with open(filename, 'w') as f:
-        for gene in list_of_genes:
-            f.write(gene)
-            f.write('\n')
-    f.close()
+    #plotting:
+    #set index as tissue 
+    df_analysis.set_index('Tissue', inplace= True)
+    #sort by fold change
+    df_analysis.sort_values('Fold Change', ascending= False, inplace= True)
+    #plot first n_bars
+    df_analysis['Fold Change'][:n_bars].plot(kind= 'bar', figsize= (10,10))
+    
+    #fix the plot to prettify it
+    plt.gca().set_xlabel('Tissue', fontsize= 18)
+    plt.gca().set_ylabel('Fold Change', fontsize= 18)
+    plt.gca().tick_params(axis= 'x', labelsize= 14)
+    plt.gca().tick_params(axis= 'y', labelsize= 14)
+    plt.gca().set_title(
+    '{0} Most Enriched Tissues by Fold Change for\nGenes with {1}'\
+    .format(n_bars, aname),
+    fontsize= 20,
+    y= 1.08
+    )    
+    plt.tight_layout()
+    
+    #save
+    plt.savefig(dirGraphs+'/{0} Enriched Tissues Fold Change Genes {1}.png'\
+                            .format(n_bars, aname))  
+    #close
+    plt.close()
+    
+#    #save genes with betas significantly different from zero in a list format
+#    k= array_of_strings[i][5:]
+#            
+#    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
+#    #print('filename', filename)
+#    with open(filename, 'w') as f:
+#        for gene in list_of_genes:
+#            f.write(gene)
+#            f.write('\n')
+#    f.close()
+    
+
+
+
+
+
+

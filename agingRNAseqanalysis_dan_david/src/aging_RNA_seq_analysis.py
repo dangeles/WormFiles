@@ -17,201 +17,93 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+import os
 
+#gene_lists from sleuth
+dfBetaA= pd.read_csv("../input/table_agebeta_genes.csv")
+dfBetaG= pd.read_csv("../input/table_genobeta_genes.csv")
+dfBetaAG= pd.read_csv("../input/table_genocrossagebeta_genes.csv")
 
-#==============================================================================
-#Formatting
-#==============================================================================
-def fixer_upper(df1, df2, df3, gene_col_name= 'gene', reads_col_name= 'reads'):
-    """
-    A function that takes 3 dataframes from different files, appends their columns,
-    sets the wbids as the gene name
-    and calculates a mean and a std column
-    returns a df with 5 columns (3 measurements, 1mean, 1 std)
-    
-    WARNINGS: DROPS NAS
-    """
-    df1.set_index(gene_col_name, inplace= True)
-    df2.set_index(gene_col_name, inplace= True)
-    df3.set_index(gene_col_name, inplace= True)
-    
-    df1.sort_index(inplace= True)
-    df2.sort_index(inplace= True)
-    df3.sort_index(inplace= True)    
-    
-    df1[reads_col_name+'2']= df2[reads_col_name]
-    df1[reads_col_name+'3']= df3[reads_col_name]
-    
-    df1['reads_mean']= df1.mean(axis= 1)
-    df1['reads_std']= df1.std(axis= 1)
-    
-    df1.dropna(inplace= True)
-    return df1
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#==============================================================================
-# Load files
-#==============================================================================
-    
-
-dfJKAged= pd.read_csv("../input/JK_aged_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfJKAged2= pd.read_csv("../input/JK_aged_adult_2.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfJKAged3= pd.read_csv("../input/JK_aged_adult_3.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-
-dfJKYoung= pd.read_csv("../input/JK_young_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfJKYoung2= pd.read_csv("../input/JK_young_adult_2.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfJKYoung3= pd.read_csv("../input/JK_young_adult_3.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-
-dfN2Aged= pd.read_csv("../input/N2_aged_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfN2Aged2= pd.read_csv("../input/N2_aged_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfN2Aged3= pd.read_csv("../input/N2_aged_adult_1.count", header= None, names= ['gene', 'reads'], sep= '\t')
-
-dfN2Young= pd.read_csv("../input/N2_young_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfN2Young2= pd.read_csv("../input/N2_young_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-dfN2Young3= pd.read_csv("../input/N2_young_adult_1.count",\
- header= None, names= ['gene', 'reads'], sep= '\t')
-
-dfJKAged= fixer_upper(dfJKAged, dfJKAged2, dfJKAged3)
-dfJKYoung= fixer_upper(dfJKYoung, dfJKYoung2, dfJKYoung3)
-dfN2Aged= fixer_upper(dfN2Aged, dfN2Aged2, dfN2Aged3)
-dfN2Young= fixer_upper(dfN2Young, dfN2Young2, dfN2Young3)
-
-
-#define column names 
-genotype_cols= ['WTY','WTA','JKY','JKAged']
-#place all files into a single dataframe
-df= pd.concat([dfN2Young, dfN2Aged, dfJKAged, dfN2Aged], \
-    keys= genotype_cols, levels= ['genotype', 'reads'], axis= 1)
-
-
-#gene lengths:
-df_gl= pd.read_csv('../input/c_elegans_gene_lengths_PRJNA13758.txt')
-df_gl.set_index('WBID',inplace = True)
-df_gl.sort_index(inplace= True)
-
-
-def tpm_calc(df= df, dfgl= df_gl):
-    """
-    WARNING: DF1 AND DFGL MUST BE PREINDEXED AND PRESORTED BY GENEID      
-    A function to calculate transcripts per million for rna-seq data
-    """
-    
-    if df.shape[0] == dfgl[0]:
-        t= '_tpm'
-        for i in np.arange(5):
-            if i > 0 and i < 3:
-                r= 'reads'+str(int(i))
-            elif i == 0:
-                r= 'reads'
-            elif i == 3:
-                r= 'reads_mean'
-            else:
-                r= 'reads_std'
-            df[r+t]= df[r]/dfgl['length'] #normalize for read length
-            df[r+t]= df[r+t]/df[r+t].sum()*10**6 #normalize
-    else:
-        print('Dataframes are not the same size')
-        if df.shape[0] > dfgl[0]:
-            print('Some genes are missing from the length df')
-        else:
-            print('dfgl is too long, please check')
-        
-        if df.shape[0]== dfgl[0] +5:
-            print('this df might still have 5 lines of code not associated with \
-            a WBID. Check to make sure they are not preprocessing info')
-    
-
-
-def plot_tha_hist(df, n_obs, plot_name, xname, yname):
-    fig, ax = plt.subplots()
-    bins2= np.logspace(-10, 10, n_obs)
-    ax.hist(df, bins= bins2)
-    ax.set_xscale('log')
-    ax.set_title(plot_name)
-    ax.set_xlabel(xname)
-    ax.set_ylabel(yname)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-
-
-
-
-
-
-
-
-
-
-
-
-
-dfJKAged['JKA_N2A']=(.01+dfJKAged.avg)/(.01+dfN2Aged.avg)
-dfJKAged['JKA_N2Y']=(.01+dfJKAged.avg)/(.01+dfN2Young.avg)
-dfJKAged['JKA_JKY']=(.01+dfJKAged.avg)/(.01+dfJKYoung.avg)
-dfJKAged['JKY_N2A']=(.01+dfJKYoung.avg)/(.01+dfN2Aged.avg)
-dfJKAged['JKY_N2Y']=(.01+dfJKYoung.avg)/(.01+dfN2Young.avg)
-dfJKAged['N2A_N2Y']=(.01+dfN2Aged.avg)/(.01+dfN2Young.avg)
-
-
-n= 2
-names= dfJKAged.index[dfJKAged.JKA_N2A>10**n].values
-names2= dfJKAged.index[dfJKAged.JKA_N2Y>10**n].values
-names3= dfJKAged.index[dfJKAged.JKA_JKY>10**n].values
-names4= dfJKAged.index[dfJKAged.JKY_N2A>10**n].values
-names5= dfJKAged.index[dfJKAged.JKY_N2Y>10**n].values
-names6= dfJKAged.index[dfJKAged.N2A_N2Y>10**n].values
-#fix name formatting to get into WBID format
-#all WBIDs are 14 chars long, but you could use lambda functions to remove
-#formatting as well. but i'm too lazy to do this in proper program form
-#g= lambda x: x.find('|')
-#end= map(g, names)
-
-
-#==============================================================================
-#==============================================================================
-#==============================================================================
-#==============================================================================
-#==============================================================================
-# # # # # 
-#==============================================================================
-#==============================================================================
-#==============================================================================
-#==============================================================================
-#==============================================================================
-
-#path= 'Users/dangeles/github/WormFiles/tissue_enrichment_hgf/tissue_enrichment/src"
-#os.chdir(path)
-#gene_file= "../input/controlGE.txt"
-#genes1= pd.read_csv(gene_file)
-#
-#
-##since the files we are using include read information
-##remove the reads and keep only the gene names
-#gene_list1= genes1[genes1.columns[0]].values
-#gene_list2= genes2[genes2.columns[0]].values
-
-
+#tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
+#if using the enrichment tool 
 tissue_df= pd.read_csv("/Users/davidangeles/Downloads/dictionary.csv")
+
+#value of beta and qvalue to slice genes from
+mag= 2
+qval= .1
+
+#slice all the relevant gene names out
+namesBetaA= \
+        dfBetaA[\
+        (dfBetaA.qval < qval) & ((dfBetaA.b > mag))]\
+        .ens_gene.unique()
+namesBetaG= \
+        dfBetaG[\
+        (dfBetaG.qval < qval) & ((dfBetaG.b > mag))]\
+        .ens_gene.unique()
+namesBetaAG= \
+        dfBetaAG[\
+        (dfBetaAG.qval < qval) & ((dfBetaAG.b > mag))]\
+        .ens_gene.unique()
+        
+namesBetaAneg= \
+        dfBetaA[\
+        (dfBetaA.qval < qval) & ((dfBetaA.b < -mag))]\
+        .ens_gene.unique()
+namesBetaGneg= \
+        dfBetaG[\
+        (dfBetaG.qval < qval) & ((dfBetaG.b < -mag))]\
+        .ens_gene.unique()
+namesBetaAGneg= \
+        dfBetaAG[\
+        (dfBetaAG.qval < qval) & ((dfBetaAG.b < -mag))]\
+        .ens_gene.unique()
+        
+
+namesA0= \
+        dfBetaA[\
+        (dfBetaA.qval < qval) & (dfBetaAG.b > 0)]\
+        .ens_gene.unique()
+namesG0= \
+        dfBetaG[\
+        (dfBetaG.qval < qval)& (dfBetaAG.b > 0)]\
+        .ens_gene.unique()
+namesAG0= \
+        dfBetaAG[\
+        (dfBetaAG.qval < qval)& (dfBetaAG.b > 0)]\
+        .ens_gene.unique()
+        
+        
+namesA0neg= \
+        dfBetaA[\
+        (dfBetaA.qval < qval) & (dfBetaAG.b < 0)]\
+        .ens_gene.unique()
+namesG0neg= \
+        dfBetaG[\
+        (dfBetaG.qval < qval)& (dfBetaAG.b < 0)]\
+        .ens_gene.unique()
+namesAG0neg= \
+        dfBetaAG[\
+        (dfBetaAG.qval < qval)& (dfBetaAG.b < 0)]\
+        .ens_gene.unique()
+
+#place all the relevant gene lists in this array
+array_of_arrays= [namesBetaA,
+                  namesBetaG,
+                  namesBetaAG,
+                  namesBetaAneg,
+                  namesBetaGneg,
+                  namesBetaAGneg,
+                  namesA0,
+                  namesG0,
+                  namesAG0,
+                  namesA0neg,
+                  namesG0neg,
+                  namesAG0neg
+                  ]
+        
+
+        
 #==============================================================================
 # 
 #==============================================================================
@@ -246,7 +138,7 @@ def pass_list(user_provided, tissue_dictionary):
 #==============================================================================
 #hgf is short for hypergeometric function
 #==============================================================================
-def hgf(gene_list, tissue_dictionary):
+def hgf(gene_list, tissue_dictionary, f, dirUnused):
     """
     Given a list of tissues and a gene-tissue dictionary,
     returns a p-dictionary for the enrichment of every tissue
@@ -262,6 +154,9 @@ def hgf(gene_list, tissue_dictionary):
     
     #figure out what genes are in the user provided list
     present= pass_list(gene_list, tissue_dictionary)  
+    
+    #make a file to let user know what genes were used for the analysis
+    present[present.provided == 1].wbid.to_csv(dirUnused+f[:-4]+'_unused_genes.csv', index= False)
     
     
     #slice out only the genes that were present from the user-provided list    
@@ -288,14 +183,29 @@ def hgf(gene_list, tissue_dictionary):
     
     #make a hash with the p-values for enrichment of each tissue. 
     p_hash= {}
+    exp_hash= {} #expected number for each tissue
     for i, name in enumerate(tissue_dictionary.columns.values): 
+        #if the total number of genes is zero, return p= 1 for all tissues
         if total == 0:
             p_hash[name]= 1
         else:
-            p_hash[name]= stats.hypergeom.sf(wanted_sum[name],total_genes, sums_of_tissues[name],total)
-        
-    #return the p-values. 
-    return p_hash
+            #give entries as total no. of colors
+            #total number of balls in urn
+            #total number of colors measured
+            #total number of balls picked out
+            p_hash[name]= \
+            stats.hypergeom.sf(\
+            wanted_sum[name],\
+            total_genes, \
+            sums_of_tissues[name],\
+            total)
+            
+            exp_hash[name]= stats.hypergeom.mean(total_genes, sums_of_tissues[name], total)	
+            
+                    
+    #return the p-values, the genes associated with each tissue and the user
+    #provided genes associate with each tissue. 
+    return p_hash, exp_hash, wanted_dictionary
     
     
 #==============================================================================
@@ -348,10 +258,10 @@ def return_enriched_tissues(p_hash, alpha, analysis_name):
     index_to_tissue= {}
     k= 0
     #go through the p_hash
-    for key, value in p_hash.iteritems():
+    for key, value in p_hash.items():
         #place each value in the list
         p_values.append(value)
-        #and the index of the value in the hash with value equal to the tissue
+        #store the hash key in an array at the same k index as the value is in p_values
         index_to_tissue[k]= key
         #add 1 to the index
         k+=1
@@ -365,44 +275,92 @@ def return_enriched_tissues(p_hash, alpha, analysis_name):
         j= index_to_tissue[index[i]]
         q_hash[j]= value
     
-    #print the results. This will likely be modified to return a 
-    #file or some such.
-    print(analysis_name+'\n')
-    print("q-values less than alpha = {0:.2} are considered statistically significant".format(alpha))
-    print("\n\n")
-    print("------------------------")
-    print("tissue,q_value")
-    for key, value in q_hash.iteritems():
-        if value < alpha:
-            print("{0},{1:.3}".format(key, value))
-    print("------------------------\n\n")
-
-        
+#    #print the results. This will likely be modified to return a 
+#    #file or some such.
+#    print(analysis_name+'\n')
+#    print\
+#    ("q-values less than alpha = {0:.2} are considered statistically significant"\
+#    .format(alpha))
+#    print("\n\n")
+#    print("------------------------")
+#    print("tissue,q_value")
+#    for key, value in q_hash.items():
+#        if value < alpha:
+#            print("{0},{1:.3}".format(key, value))
+#    print("------------------------\n\n")
+    
     return q_hash
 #==============================================================================
 #     
 #==============================================================================    
-
-def implement_hypergmt_enrichment_tool(analysis_name, gene_list, tissue_df= tissue_df, alpha= 0.01):
+def implement_hypergmt_enrichment_tool(analysis_name, gene_list, \
+    tissue_df= tissue_df, alpha= 0.1, f='EnrichmentAnalysis.csv', \
+    dirEnrichment= '../output/EnrichmentAnalysisResults', dirUnused= '../output/UnusedGenes'):
     """
     Calls all the above functions
     
     gene_list: a list of non-redundant gene names
     tissue_df
     alpha: significance threshold, defaults to 0.01
+    f: filename for the enrichment analysis
+    
+    dirEnrichment: directory where the enrichment analysis will be placed
+    dirUnusued: directory where the lists of unused genes will be deposited
+    
+    The directories are useful to specify when users provide multiple analyses 
+    in batch
     """
     
-    
-    
+    if f[-4:] != '.csv':
+        if f[-4:] != '.txt':
+            f= f+'.csv'
+            
     print('Executing script\n')
-    p_hash= hgf(gene_list, tissue_df)
     
+    #create the directories where the results will go
+    if not os.path.exists(dirEnrichment):
+        os.makedirs(dirEnrichment)
+    if not os.path.exists(dirUnused):
+        os.makedirs(dirUnused)
+        
+    #calculat the enrichment
+    p_hash, exp_hash, wanted_dic= hgf(gene_list, tissue_df, f, dirUnused+'/')
+    
+    #FDR correct
     q_hash= return_enriched_tissues(p_hash, alpha, analysis_name)
     
-    return q_hash, p_hash
+
+    #write the results to a file. 
+    with open(dirEnrichment+'/'+f, 'w') as file:
+        file.write('#Tissue Enrichment Analysis for {0}\n'.format(analysis_name))
+        file.write('Tissue,Expected,Observed, Fold Change,Q value\n')
+        for tissue, qval in q_hash.items():
+            if qval < alpha:
+                
+                file.write(tissue)
+                file.write(',')
+                
+                expected= exp_hash[tissue]
+                file.write('{0:.2}'.format(expected))
+                file.write(',')
+                
+                observed= wanted_dic[tissue].sum()
+                file.write(str(observed))
+                file.write(',')
+                
+                file.write('{0:.2}'.format(observed/expected))
+                file.write(',')
+                
+                file.write('{0:.3}'.format(qval))
+                file.write('\n')
+    
+    return q_hash#, p_hash
 #==============================================================================
 #     
 #==============================================================================
+
+def plotting_and_formatting(q, p, want_plots= 'yes', want_files= 'yes', max_n= '15'):
+    
 #==============================================================================
 #==============================================================================
 #==============================================================================
@@ -419,40 +377,77 @@ def implement_hypergmt_enrichment_tool(analysis_name, gene_list, tissue_df= tiss
 
 
 #Run the whole thing:
-q, p= implement_hypergmt_enrichment_tool('JKAged/N2A 10**{0}'.format(n), names, tissue_df, 0.1)
-q2, p= implement_hypergmt_enrichment_tool('JKAged/N2Y 10**{0}'.format(n), names2, tissue_df, 0.1)
-q3, p= implement_hypergmt_enrichment_tool('JKAged/JKY 10**{0}'.format(n), names3, tissue_df, 0.1)
-q4, p= implement_hypergmt_enrichment_tool('JKY/N2A 10**{0}'.format(n), names4, tissue_df, 0.1)
-q5, p= implement_hypergmt_enrichment_tool('JKY/NY2 10**{0}'.format(n), names5, tissue_df, 0.1)
-q6, p= implement_hypergmt_enrichment_tool('N2A/N2Y 10**{0}'.format(n), names6, tissue_df, 0.1)
+
+qvalEn= 0.1
+
+aname0= 'Age Beta> {0}'.format(mag)
+aname1= 'Genotype Beta> {0}'.format(mag)
+aname2= 'Age::Genotype Beta> {0}'.format(mag)
+
+aname3= 'Age Beta< -{0}'.format(mag)
+aname4= 'Genotype Beta< -{0}'.format(mag)
+aname5= 'Age::Genotype Beta< -{0}'.format(mag)
+
+aname6= 'Age Beta> 0'
+aname7= 'Genotype Beta> 0'
+aname8= 'Age::Genotype Beta> 0'
+
+aname9= 'Age Beta< 0'
+aname10= 'Genotype Beta< 0'
+aname11= 'Age::Genotype Beta< 0'
+
+array_of_anames= [aname0,aname1,aname2,
+                  aname3,aname4,aname5,
+                  aname6,aname7,aname8,
+                  aname9,aname10,aname11]
+
+fname0= 'EnrichmentAnalysisAge_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname1= 'EnrichmentAnalysisGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname2= 'EnrichmentAnalysisAgeCrossGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+
+fname3= 'EnrichmentAnalysisAgePositive_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname4= 'EnrichmentAnalysisGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname5= 'EnrichmentAnalysisAgeCrossGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+
+fname6= 'EnrichmentAnalysisAge_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+fname7= 'EnrichmentAnalysisGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+fname8= 'EnrichmentAnalysisAgeCrossGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+
+fname9= 'EnrichmentAnalysisAge_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+fname10= 'EnrichmentAnalysisGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+fname11= 'EnrichmentAnalysisAgeCrossGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+
+array_of_fnames= [fname0, fname1, fname2,
+                  fname3, fname4, fname5, 
+                  fname6, fname7, fname8, 
+                  fname9, fname10, fname11]
+                  
+array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
+                'namesBetaAneg', 'namesBetaGneg', 'namesBetaAGneg',
+                'namesA0', 'namesG0', 'namesAG0',
+                'namesA0neg', 'namesG0neg', 'namesAG0neg'
+                ]
+dirLists= '../output/Gene_lists_for_analysis'
+if not os.path.exists(dirLists):
+    os.makedirs(dirLists)
 
 
 
-#==============================================================================
-# plotting functions
-#==============================================================================
-def plot_tha_seqs(dfx, dfy, name, namex, namey, plot_line= True, xmax= None, ymax= None):
-    fig, ax = plt.subplots()
-    ax.scatter(dfx, dfy, s= 1, c= 'b', alpha= 0.3 )
-    if xmax == None:
-        xmax= dfx.max()
-    if ymax == None:
-        ymax= dfy.max()
-    ax.set_xlim(10**-2, xmax) 
-    ax.set_ylim(10**-1, ymax)
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_title(name)
-    ax.set_xlabel(namex)
-    ax.set_ylabel(namey)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-
-    if plot_line:
-        plt.gca().plot([10**-2, xmax], [10**-2, xmax], '-', lw= 2)
-        
-
-plot_tha_seqs(df['reads_mean'], df['reads_mean']/dfJKAged['reads_mean'], '', 'fem-1 aged', 'n2aged')
-
+#run the whole thing for each dataset
+for i, list_of_genes in enumerate(array_of_arrays):
+    #run the tissue enrichment tool 
+    aname= array_of_anames[i] #name of the analysis
+    fname= array_of_fnames[i] #filename to store as
+    q= implement_hypergmt_enrichment_tool(aname, list_of_genes, tissue_df, qvalEn, f= fname)
+    
+    
+    #save genes with betas significantly different from zero in a list format
+    k= array_of_strings[i][5:]
+            
+    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
+    #print('filename', filename)
+    with open(filename, 'w') as f:
+        for gene in list_of_genes:
+            f.write(gene)
+            f.write('\n')
+    f.close()

@@ -1,0 +1,44 @@
+#Tissue Enrichment Analysis for Age::Genotype Beta< -2
+Tissue,Expected,Observed, Fold Change,Q value
+inner labial neuron(WBbt:0005117),1.8,5,2.8,0.0539
+sensory neuron(WBbt:0005759),1.2e+01,24,2.0,0.00807
+blast cell(WBbt:0006783),3.4,11,3.2,0.00807
+Cell(WBbt:0004017),6.4e+01,70,1.1,0.0506
+posterior lateral right ganglion(WBbt:0005463),1.6,5,3.2,0.0411
+tail ganglion(WBbt:0006977),2e+01,29,1.5,0.0506
+anterior ganglion (post)(WBbt:0005371),3.1,7,2.2,0.0625
+pharyngeal cell(WBbt:0005460),1.1e+01,18,1.6,0.059
+neuron(WBbt:0003679),4.2e+01,50,1.2,0.0766
+ciliated neuron(WBbt:0006816),1.2e+01,21,1.8,0.0333
+tail neuron(WBbt:0006759),2e+01,29,1.5,0.0445
+HSNL(WBbt:0004758),1.6,4,2.5,0.0795
+extracellular component(WBbt:0005732),2.2,6,2.7,0.0506
+muscle cell(WBbt:0003675),2e+01,31,1.5,0.0334
+somatic nervous system(WBbt:0005760),2.1e+01,34,1.6,0.00807
+oxygene sensory neuron(WBbt:0008432),1.5,6,3.9,0.0126
+anal sphincter muscle(WBbt:0005798),1.9,5,2.6,0.0624
+posterior lateral left ganglion(WBbt:0005464),2.5,6,2.4,0.0591
+post-embryonic cell(WBbt:0007030),3.1,8,2.5,0.0397
+vulval cell(WBbt:0007831),1.6,4,2.5,0.078
+anterior ganglion(WBbt:0005375),3.9,8,2.1,0.0685
+outer labial sensillum(WBbt:0005501),1.5,7,4.7,0.00807
+HSNR(WBbt:0004757),1.6,4,2.5,0.0787
+vulval muscle(WBbt:0005821),9.7,18,1.9,0.0334
+accessory cell(WBbt:0005762),2.2,6,2.7,0.0506
+dorsal nerve cord(WBbt:0006750),3.9,8,2.0,0.0685
+pharyngeal muscle cell(WBbt:0005451),5.6,12,2.1,0.0359
+nerve ring(WBbt:0006749),9.4,17,1.8,0.0411
+non-striated muscle(WBbt:0005780),1.9e+01,28,1.5,0.0416
+muscular system(WBbt:0005737),2.7e+01,37,1.4,0.0506
+sensillum(WBbt:0006929),1.3e+01,19,1.5,0.078
+ventral cord neuron(WBbt:0005300),9.6,16,1.7,0.0625
+nerve ring neuron(WBbt:0006974),6.2,11,1.8,0.078
+dopaminergic neuron(WBbt:0006746),1.5,7,4.6,0.00807
+head neuron(WBbt:0006751),3.2e+01,40,1.2,0.092
+male-specific(WBbt:0005757),2.9,9,3.1,0.00897
+ganglion(WBbt:0005189),2.6e+01,35,1.3,0.0685
+mechanosensory neuron(WBbt:0008431),5.0,18,3.6,3.22e-05
+uterine epithelial cell(WBbt:0008435),1.7,4,2.4,0.0862
+inner labial sensillum(WBbt:0005116),2.0,5,2.5,0.0685
+ventral nerve cord(WBbt:0005829),6.8,13,1.9,0.0506
+touch receptor neuron(WBbt:0005237),2.6,9,3.4,0.00807

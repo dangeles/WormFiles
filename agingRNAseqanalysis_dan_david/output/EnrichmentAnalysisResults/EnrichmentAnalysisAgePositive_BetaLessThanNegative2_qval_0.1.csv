@@ -1,0 +1,5 @@
+#Tissue Enrichment Analysis for Age Beta< -2
+Tissue,Expected,Observed, Fold Change,Q value
+intestine(WBbt:0005772),6.4e+01,103,1.6,3e-10
+digestive tract(WBbt:0005743),8.3e+01,108,1.3,5.24e-05
+alimentary system(WBbt:0005748),8.5e+01,109,1.3,6.86e-05

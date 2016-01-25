@@ -1,0 +1,17 @@
+#Tissue Enrichment Analysis for Age::Genotype Beta> 0
+Tissue,Expected,Observed, Fold Change,Q value
+mu_int_R(WBbt:0003822),5.5,11,2.0,0.0887
+excretory cell(WBbt:0005812),1.9e+01,38,2.0,0.000203
+gonadal sheath cell(WBbt:0005828),9.8,18,1.8,0.0608
+body wall musculature(WBbt:0005813),5.8e+01,75,1.3,0.0608
+digestive tract(WBbt:0005743),1.4e+02,194,1.4,1.95e-12
+mu_int_L(WBbt:0003833),5.5,11,2.0,0.0887
+anal depressor muscle(WBbt:0004292),2e+01,31,1.5,0.0661
+alimentary system(WBbt:0005748),1.5e+02,197,1.3,1.95e-12
+epithelial system(WBbt:0005730),7.7e+01,94,1.2,0.0808
+intestine(WBbt:0005772),1.1e+02,174,1.6,6.53e-16
+muscular system(WBbt:0005737),8.6e+01,104,1.2,0.0661
+excretory system(WBbt:0005736),2.1e+01,38,1.8,0.00156
+hypodermis(WBbt:0005733),7e+01,90,1.3,0.0239
+excretory secretory system(WBbt:0006850),2.3e+01,41,1.8,0.00113
+pharynx(WBbt:0003681),8.5e+01,112,1.3,0.00156

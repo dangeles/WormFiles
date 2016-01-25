@@ -1,0 +1,55 @@
+#Tissue Enrichment Analysis for Age Beta> 2
+Tissue,Expected,Observed, Fold Change,Q value
+posterior lateral right ganglion(WBbt:0005463),4.5,9,2.0,0.0535
+preanal ganglion neuron(WBbt:0005447),6.2,11,1.8,0.0722
+phasmid left sensillum(WBbt:0005431),5.1,9,1.8,0.0911
+inner labial neuron(WBbt:0005117),5.2,14,2.7,0.00272
+sensory neuron(WBbt:0005759),3.4e+01,57,1.7,0.000924
+blast cell(WBbt:0006783),9.7,24,2.5,0.000924
+ASKL(WBbt:0003884),4.5,11,2.5,0.0138
+ciliated neuron(WBbt:0006816),3.4e+01,58,1.7,0.000924
+lumbar left ganglion neuron(WBbt:0005097),1.2e+01,22,1.8,0.0172
+lumbar ganglion right(WBbt:0005601),1.3e+01,23,1.7,0.0195
+retrovesicular ganglion(WBbt:0005656),5.1,10,2.0,0.0507
+interneuron(WBbt:0005113),2.2e+01,34,1.5,0.0224
+AWC(WBbt:0005672),4.7,10,2.1,0.0314
+phasmid neuron(WBbt:0006753),1e+01,17,1.7,0.0535
+odorsensory neuron(WBbt:0005839),8.9,14,1.6,0.0911
+extracellular component(WBbt:0005732),6.4,12,1.9,0.048
+AWCR(WBbt:0003826),4.5,10,2.2,0.0236
+oxygene sensory neuron(WBbt:0008432),4.4,11,2.5,0.0124
+phasmid right sensillum(WBbt:0005427),5.1,9,1.8,0.0911
+lateral ganglion left(WBbt:0005103),2e+01,29,1.4,0.0646
+dorsal nerve cord(WBbt:0006750),1.1e+01,17,1.5,0.0911
+ASEL(WBbt:0003904),5.5,16,2.9,0.000924
+amphid right sensillum(WBbt:0005392),1.8e+01,30,1.6,0.0172
+anterior ganglion(WBbt:0005375),1.1e+01,18,1.6,0.0538
+outer labial sensillum(WBbt:0005501),4.3,14,3.3,0.000924
+ADLL(WBbt:0003997),4.5,9,2.0,0.0535
+lumbar right ganglion neuron(WBbt:0005600),1.3e+01,22,1.7,0.0224
+lumbar ganglion left(WBbt:0005098),1.3e+01,23,1.8,0.0172
+ASER(WBbt:0003903),5.5,17,3.1,0.000924
+ASIL(WBbt:0003888),5.9,13,2.2,0.0172
+embryonic cell(WBbt:0007028),4e+01,50,1.3,0.0911
+lateral ganglion right neuron(WBbt:0005100),2e+01,29,1.4,0.0641
+ASHL(WBbt:0003890),4.4,8,1.8,0.0911
+posterior lateral left ganglion(WBbt:0005464),7.0,12,1.7,0.0731
+ASIR(WBbt:0003887),5.9,13,2.2,0.0172
+sensillum(WBbt:0006929),3.6e+01,55,1.5,0.00321
+nerve ring neuron(WBbt:0006974),1.8e+01,32,1.8,0.00363
+dopaminergic neuron(WBbt:0006746),4.4,10,2.3,0.0224
+chemosensory neuron(WBbt:0005837),1.6e+01,29,1.8,0.00715
+serotonergic neuron(WBbt:0006837),9.8,17,1.7,0.0386
+AWCL(WBbt:0003827),4.5,10,2.2,0.0236
+ADLR(WBbt:0003995),4.5,9,2.0,0.0535
+male-specific(WBbt:0005757),8.2,16,2.0,0.0192
+anterior ganglion (post)(WBbt:0005371),9.0,14,1.6,0.0933
+amphid left sensillum(WBbt:0005395),1.8e+01,30,1.6,0.0172
+lateral ganglion left neuron(WBbt:0005102),2e+01,29,1.4,0.0642
+interfacial epithelial cell(WBbt:0005754),1.4e+01,20,1.5,0.0911
+lateral ganglion right(WBbt:0005101),2e+01,29,1.4,0.0644
+carbon dioxide sensory neuron(WBbt:0008430),8.0,18,2.2,0.00413
+mechanosensory neuron(WBbt:0008431),1.4e+01,28,2.0,0.00258
+amphid neuron(WBbt:0005394),2.6e+01,44,1.7,0.00272
+ASKR(WBbt:0003883),4.4,10,2.3,0.0224
+inner labial sensillum(WBbt:0005116),5.8,16,2.8,0.0011

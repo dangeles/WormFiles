@@ -6,11 +6,7 @@ Created on Fri Jan  8 08:56:36 2016
 """
 
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
 
-Investigation of the new dictionary
-"""
 
 import pandas as pd
 import numpy as np

@@ -28,6 +28,9 @@ dfBetaA= pd.read_csv("../input/table_agebeta_genes.csv")
 dfBetaG= pd.read_csv("../input/table_genobeta_genes.csv")
 dfBetaAG= pd.read_csv("../input/table_genocrossagebeta_genes.csv")
 
+dfDaf12= pd.read_csv('../input/daf12genes.csv')
+dfDaf16= pd.read_csv('../input/daf16genes.csv')
+
 #tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
 #if using the enrichment tool 
 tissue_df= pd.read_csv("../input/dictionary.csv")
@@ -103,9 +106,11 @@ array_of_arrays= [namesBetaA,
                   namesAG0neg
                   ]
 
-#Run the whole thing:
 
 
+#==============================================================================
+# Tissue Enrichment Batch Analysis
+#==============================================================================
 aname0= 'Age Beta> {0}'.format(mag)
 aname1= 'Genotype Beta> {0}'.format(mag)
 aname2= 'Age::Genotype Beta> {0}'.format(mag)
@@ -199,7 +204,164 @@ for i, list_of_genes in enumerate(array_of_arrays):
     
 
 
+#Daf-12 associated genes
+ndaf12= dfDaf12.shape[0]
+ndaf16= dfDaf16.shape[0]
+print('no. of daf-12 genes in list: {0}'.format(ndaf12))
+print('no. of daf-16 genes in list: {0}'.format(ndaf16))
+print('\n')
+
+nA= dfBetaA[dfBetaA.qval < .1].shape[0]
+nG= dfBetaG[dfBetaG.qval < .1].shape[0]
+nAG= dfBetaAG[dfBetaAG.qval < .1].shape[0]
+
+print('no. of sig. genes in dfA: {0}'.format(nA))
+print('no. of sig. genes in dfG: {0}'.format(nG))
+print('no. of sig. genes in dfAG: {0}'.format(nAG))
+
+indA12= (dfBetaA.ens_gene.isin(dfDaf12.gene)) & (dfBetaA.qval < .1)
+indA16= (dfBetaA.ens_gene.isin(dfDaf16.gene)) & (dfBetaA.qval < .1)
+ndaf12A= dfBetaA.b[indA12].shape[0]
+ndaf16A= dfBetaA.b[indA16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in aging'.format(qval))
+print(ndaf12A)
+print('frac of genes {0:.2}'.format(ndaf12A/ndaf12))
+print('no. of daf-16 genes with qval < {0:.2} in aging'.format(qval))
+print(ndaf16A)
+print('frac of genes {0:.2}'.format(ndaf16A/ndaf16))
+
+dfBetaA.b[indA12].plot('kde', lw= 4, color= 'b')
+dfBetaA.b[indA16].plot('kde', lw= 4)
+plt.xlim(-5, 5)
+
+
+indG12= (dfBetaG.ens_gene.isin(dfDaf12.gene)) & (dfBetaG.qval < .1)
+indG16= (dfBetaG.ens_gene.isin(dfDaf16.gene)) & (dfBetaG.qval < .1)
+ndaf12G= dfBetaG.b[indG12].shape[0]
+ndaf16G= dfBetaG.b[indG16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in genotype'.format(qval))
+print(ndaf12G)
+print('frac of genes in dbase {0:.2}'.format(ndaf12G/nG))
+print('no. of daf-16 genes with qval < {0:.2} in genotype'.format(qval))
+print(ndaf16G)
+print('frac of genes in dbase {0:.2}'.format(ndaf16G/nG))
+
+dfBetaG.b[indG12].plot('kde', lw= 4, color= 'b')
+dfBetaG.b[indG16].plot('kde', lw= 4)
+plt.xlim(-5,5)
+
+
+indAG12= (dfBetaAG.ens_gene.isin(dfDaf12.gene)) & (dfBetaAG.qval < .1)
+indAG16= (dfBetaAG.ens_gene.isin(dfDaf16.gene)) & (dfBetaAG.qval < .1)
+
+
+ndaf12AG= dfBetaAG.b[indAG12].shape[0]
+ndaf16AG= dfBetaAG.b[indAG16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in aging::genotype'.format(qval))
+print(ndaf12AG)
+print('frac of genes in dbase {0:.2}'.format(ndaf12AG/nAG))
+print('no. of daf-16 genes with qval < {0:.2} in aging::genotype'.format(qval))
+print(ndaf16AG)
+print('frac of genes in dbase {0:.2}'.format(ndaf16AG/nAG))
+
+dfBetaAG.b[indAG12].plot('kde')
+dfBetaAG.b[indAG16].plot('kde')
+plt.xlim(-5, 5)
+
+
+def wbid_extractor(tissue_df, main_tissue):
+    """
+    Given a string 'main_tissue', find all columns that
+    have a substring equal to it in tissue_df. Then,
+    extract all the wbids that are expressed in any of these
+    columns and return a non-redundant list of these wbids
+    """
+    if type(main_tissue) != str:
+        raise ValueError('please input a string in main tissue')
+        
+    matching = [s for s in tissue_df.columns if main_tissue in s]
+    names= []
+    for i in matching:
+        if len(names) == 0:
+            names= tissue_df.wbid[tissue_df[i]==1].values
+        else:
+            names= np.append(names, tissue_df.wbid[tissue_df[i]==1].values)
+    names= list(set(names))
+    
+    return names
+    
+neurons= wbid_extractor(tissue_df, 'neuron')
+intestine= wbid_extractor(tissue_df, 'intestine')
+germline= wbid_extractor(tissue_df, 'germ')
+muscle= wbid_extractor(tissue_df, 'muscle')
+hyp= wbid_extractor(tissue_df, 'hyp')
+sperm= wbid_extractor(tissue_df, 'sperm')
+male= wbid_extractor(tissue_df, 'male')
+
+def organize(names, tissue_df):
+    
+    index= [None]*len(names)
+    for i, value in names:
+        
+    df_selected_tissues= df.DataFrame(index= len(tissue_df), columns= columns)
+    df_selected_tissues.wbid= tissue_df.wbid
+    df_selected_tissues[columns[i]][df_selected_tissues.wbid == index[i]]= 1
+    df.fillna(0, inplace= True)
+
+all_tiss= list(set(np.append(neurons, intestine)))
+all_tiss= list(set(np.append(all_tiss, germline)))
+all_tiss= list(set(np.append(all_tiss, muscle)))
+all_tiss= list(set(np.append(all_tiss, hyp)))
+all_tiss= list(set(np.append(all_tiss, sperm)))
+all_tiss= list(set(np.append(all_tiss, male)))
+
+
+xnotsig= dfBetaA[(dfBetaA.qval > .1)].b
+ynotsig= dfBetaA[(dfBetaA.qval > .1)].qval
+xnotisssig= dfBetaA[(~dfBetaA.ens_gene.isin(all_tiss)) & (dfBetaA.qval < .1)].b
+ynotisssig= dfBetaA[(~dfBetaA.ens_gene.isin(all_tiss)) & (dfBetaA.qval < .1)].qval
+
+def volcano_plot_tissue(tissue, q, df, ax, label, col= 'b'):
+    """
+    """
+    f= lambda x: (df.ens_gene.isin(x)) & (df.qval < q)
+    ind= f(tissue) 
+    x= df[ind].b
+    y= df[ind].qval
+    plt.gca().plot(x, -np.log(y), 'o', color= col, ms= 4.5, alpha= .6, label= label)
+
+
+#color vector:
+colors= ['#999999','#a65628','#f781bf','#ffff33','#ff7f00','#984ea3','#4daf4a','#377eb8', '#e41a1c']
+
+fig, ax= plt.subplots()
+plt.plot(xnotsig, -np.log(ynotsig), 'o', color=colors[0], ms= 4.5, alpha= .6, label= 'not sig')
+plt.plot(xnotisssig, -np.log(ynotisssig), 'o', color=colors[1], ms=4.5, alpha= .6, label= 'sig, no tissue')
+
+#plot all the points not associated with a tissue
+volcano_plot_tissue(neurons, .1, dfBetaA, label= 'neurons', col= colors[2], ax= ax)
+volcano_plot_tissue(intestine, .1, dfBetaA, label= 'intestine', col= colors[3], ax= ax)
+volcano_plot_tissue(germline, .1, dfBetaA, label= 'germline', col= colors[4], ax= ax)
+volcano_plot_tissue(muscle, .1, dfBetaA, label= 'muscle', col= colors[5], ax= ax)
+volcano_plot_tissue(hyp, .1, dfBetaA, label= 'hyp', col= colors[6], ax= ax)
+volcano_plot_tissue(sperm, .1, dfBetaA, label= 'sperm', col= colors[7], ax= ax)
+volcano_plot_tissue(male, .1, dfBetaA, label= 'male', col= colors[8], ax= ax)
+plt.legend()
 
 
 
 
+
+
+
+
+
+
+
+
+
+    
+    

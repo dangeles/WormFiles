@@ -31,6 +31,8 @@ dfBetaAG= pd.read_csv("../input/table_genocrossagebeta_genes.csv")
 dfDaf12= pd.read_csv('../input/daf12genes.csv')
 dfDaf16= pd.read_csv('../input/daf16genes.csv')
 
+dfEckley= pd.read_csv('../input/eckley_data.csv', header= None, names=['gene'])
+dfLifespanGenes= pd.read_csv('../input/lifespan_genes.csv', header= None, names= ['gene'])
 #tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
 #if using the enrichment tool 
 tissue_df= pd.read_csv("../input/dictionary.csv")
@@ -203,7 +205,9 @@ for i, list_of_genes in enumerate(array_of_arrays):
 #    f.close()
     
 
-
+#==============================================================================
+# Analysis of some gold standard sets within our data
+#==============================================================================
 #Daf-12 associated genes
 ndaf12= dfDaf12.shape[0]
 ndaf16= dfDaf16.shape[0]
@@ -292,76 +296,156 @@ def wbid_extractor(tissue_df, main_tissue):
     names= list(set(names))
     
     return names
-    
-neurons= wbid_extractor(tissue_df, 'neuron')
-intestine= wbid_extractor(tissue_df, 'intestine')
-germline= wbid_extractor(tissue_df, 'germ')
-muscle= wbid_extractor(tissue_df, 'muscle')
-hyp= wbid_extractor(tissue_df, 'hyp')
-sperm= wbid_extractor(tissue_df, 'sperm')
-male= wbid_extractor(tissue_df, 'male')
+
 
 def organize(names, tissue_df):
+    """
+    Pick your favourite tissues, place them in a list
+    provide the tissue dictionary and they will be assembled
+    into a dataframe of all tissues that include that word 
+    """
+    #guarantee its iterable
+    if type(names) in [str]:
+        names= [names]
     
-    index= [None]*len(names)
-    for i, value in names:
+    names= ['wbid']+names
         
-    df_selected_tissues= df.DataFrame(index= len(tissue_df), columns= columns)
-    df_selected_tissues.wbid= tissue_df.wbid
-    df_selected_tissues[columns[i]][df_selected_tissues.wbid == index[i]]= 1
+    df= pd.DataFrame(index= np.arange(0, len(tissue_df)), columns= names)    
+    df.wbid= tissue_df.wbid
+    for i, value in enumerate(names):
+        genes_in_tissue= wbid_extractor(tissue_df, value)
+        df[value][df.wbid.isin(genes_in_tissue)]= 1
+
     df.fillna(0, inplace= True)
-
-all_tiss= list(set(np.append(neurons, intestine)))
-all_tiss= list(set(np.append(all_tiss, germline)))
-all_tiss= list(set(np.append(all_tiss, muscle)))
-all_tiss= list(set(np.append(all_tiss, hyp)))
-all_tiss= list(set(np.append(all_tiss, sperm)))
-all_tiss= list(set(np.append(all_tiss, male)))
+    df1= pd.melt(df, id_vars='wbid', value_vars=tissues)
+    return df1
 
 
-xnotsig= dfBetaA[(dfBetaA.qval > .1)].b
-ynotsig= dfBetaA[(dfBetaA.qval > .1)].qval
-xnotisssig= dfBetaA[(~dfBetaA.ens_gene.isin(all_tiss)) & (dfBetaA.qval < .1)].b
-ynotisssig= dfBetaA[(~dfBetaA.ens_gene.isin(all_tiss)) & (dfBetaA.qval < .1)].qval
-
-def volcano_plot_tissue(tissue, q, df, ax, label, col= 'b'):
+def volcano_plot_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b', a= .8):
     """
+    Plots all the tissue specific genes,i.e. all genes that appear in one and only
+    one 'tissue'
     """
-    f= lambda x: (df.ens_gene.isin(x)) & (df.qval < q)
-    ind= f(tissue) 
-    x= df[ind].b
-    y= df[ind].qval
-    plt.gca().plot(x, -np.log(y), 'o', color= col, ms= 4.5, alpha= .6, label= label)
+    g= lambda x:((dfindex.value == 1) & (dfindex.variable == x))\
+        & (~dfindex[dfindex.value == 1].duplicated('wbid')) 
+    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
+    
+    gene_selection= g(tissue)
+    
+    
+    genes_to_plot= dfindex[gene_selection].wbid
+    
+    ind= f(genes_to_plot)
+    x= dfplot[ind].b
+    y= dfplot[ind].qval
+    plt.gca().plot(x, -np.log10(y), 'o', color= col, ms= 6, alpha= a, label= label)    
 
+
+def explode(q, dfvals, dftiss, colors, title= '', savename= '', xlab= r'$\beta$',\
+             ylab= r'log$_{10}Q$',a= .7):
+    """
+    A function that generates all the relevant volcano plots
+    """
+
+    ind1= (dftiss.value==0) | (dftiss[dftiss.value==1].duplicated('wbid'))
+    ind2= (dfvals.ens_gene.isin(dftiss[ind1].wbid)) & (dfvals.qval < q)
+    
+    xnotisssig= dfvals[ind2].b
+    ynotisssig= dfvals[ind2].qval
+    
+    fig, ax= plt.subplots()
+    plt.plot(xnotisssig, -np.log10(ynotisssig), 'o', \
+    color=colors[0], ms=6, alpha= a, label= 'no tissue')
+        
+    #plot all the points not associated with a tissue
+    for i, value in enumerate(tissues):
+        volcano_plot_tissue(value, .1, dfvals, dftiss, label= value,\
+        col= colors[i+2], ax= ax, a=a)
+    plt.legend(fontsize= 12)
+    plt.title(title)
+    plt.xlabel(xlab, fontsize= 15)
+    plt.ylabel(ylab, fontsize= 15)
+    plt.xscale('symlog')
+    plt.yscale('log')
+    plt.xlim(-12, 12)
+    plt.ylim(.9, 100)
+    
+    if savename:
+        plt.savefig(savename)
+        
+def volcano_plot_select_genes(q, dfplot, dfgenes, ax, label, col= 'b', a= .8):
+    """
+    Plots all the tissue specific genes,i.e. all genes that appear in one and only
+    one 'tissue'
+    """
+    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)    
+    
+    ind= f(dfgenes.gene.values)
+
+    x= dfplot[ind].b
+    y= dfplot[ind].qval
+    print(len(x))
+    plt.gca().plot(x, -np.log10(y), 'o', color= col, ms= 6, alpha= a, label= label)    
 
 #color vector:
-colors= ['#999999','#a65628','#f781bf','#ffff33','#ff7f00','#984ea3','#4daf4a','#377eb8', '#e41a1c']
+colors= ['#696969','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
+tissues= ['body muscle', 'neuron', 'intestine', 'somatic gonad' ]
+df_exp= organize(tissues, tissue_df)
+
+
+
+explode(qval, dfBetaA, df_exp, colors, title= 'Aging', \
+        savename= '../output/Graphs/aging_tissue_specific_volcplot.png',\
+        xlab= r'$\beta_{\mathrm{Aging}}$')
+explode(qval, dfBetaG, df_exp, colors, title= 'Genotype', \
+        savename= '../output/Graphs/genotype_tissue_specific_volcplot.png', \
+        xlab= r'$\beta_{\mathrm{Genotype}}$')
+explode(qval, dfBetaAG, df_exp, colors, title= 'Aging::Genotype', \
+        savename= '../output/Graphs/agingxgenotype_tissue_specific_volcplot.png',\
+        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$')
+#
+fig, ax= plt.subplots()
+volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes, ax, '')
+volcano_plot_select_genes(.1, dfBetaA, dfEckley, ax, '', 'r')
+volcano_plot_select_genes(.1, dfBetaA, dfDaf12, ax, '', 'g')
+volcano_plot_select_genes(.1, dfBetaA, dfDaf16, ax, '', 'y')
 
 fig, ax= plt.subplots()
-plt.plot(xnotsig, -np.log(ynotsig), 'o', color=colors[0], ms= 4.5, alpha= .6, label= 'not sig')
-plt.plot(xnotisssig, -np.log(ynotisssig), 'o', color=colors[1], ms=4.5, alpha= .6, label= 'sig, no tissue')
+volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes, ax, '')
+volcano_plot_select_genes(.1, dfBetaG, dfEckley, ax, '', 'r')
+volcano_plot_select_genes(.1, dfBetaG, dfDaf12, ax, '', 'g')
+volcano_plot_select_genes(.1, dfBetaG, dfDaf16, ax, '', 'y')
 
-#plot all the points not associated with a tissue
-volcano_plot_tissue(neurons, .1, dfBetaA, label= 'neurons', col= colors[2], ax= ax)
-volcano_plot_tissue(intestine, .1, dfBetaA, label= 'intestine', col= colors[3], ax= ax)
-volcano_plot_tissue(germline, .1, dfBetaA, label= 'germline', col= colors[4], ax= ax)
-volcano_plot_tissue(muscle, .1, dfBetaA, label= 'muscle', col= colors[5], ax= ax)
-volcano_plot_tissue(hyp, .1, dfBetaA, label= 'hyp', col= colors[6], ax= ax)
-volcano_plot_tissue(sperm, .1, dfBetaA, label= 'sperm', col= colors[7], ax= ax)
-volcano_plot_tissue(male, .1, dfBetaA, label= 'male', col= colors[8], ax= ax)
-plt.legend()
+fig, ax= plt.subplots()
+volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes, ax, '')
+volcano_plot_select_genes(.1, dfBetaAG, dfEckley, ax, '', 'r')
+volcano_plot_select_genes(.1, dfBetaAG, dfDaf12, ax, '', 'g')
+volcano_plot_select_genes(.1, dfBetaAG, dfDaf16, ax, '', 'y')
 
+#plt.yscale('log')
+#volcano_plot_phenotype(.1, dfBetaG, dfLifespanGenes, ax, '')
+#volcano_plot_phenotype(.1, dfBetaAG, dfLifespanGenes, ax, '')
 
+#figure out how many genes in dfLIfespan show up in this analysis
+f= lambda x: (dfBetaA.ens_gene.isin(x)) & (dfBetaA.qval < .1)    
+ind= f(dfLifespanGenes.gene.values)
+m= dfBetaA[ind].ens_gene.values
 
+f= lambda x: (dfBetaG.ens_gene.isin(x)) & (dfBetaG.qval < .1)    
+ind= f(dfLifespanGenes.gene.values)
 
+m= np.append(m, dfBetaG[ind].ens_gene.values)
 
+f= lambda x: (dfBetaAG.ens_gene.isin(x)) & (dfBetaAG.qval < .1)    
+ind= f(dfLifespanGenes.gene.values)
 
+m= np.append(m, dfBetaAG[ind].ens_gene.values)
 
-
-
-
-
-
-
-    
+m= list(set(m))    
+with open('lifespan_genes_that_show_up.csv', 'w') as f:
+    f.write('WBID\n')
+    for gene in m:
+        f.write(gene)
+        f.write('\n')
+    f.close()
     

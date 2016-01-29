@@ -20,7 +20,15 @@ import os
 mag= 2 #value of beta from regression
 qval= .1 #qvalue from regression
 qvalEn= 0.05 #q value for enrichment analysis (tissues)
-
+                
+dirLists= '../output/Gene_lists_for_analysis'
+if not os.path.exists(dirLists):
+    os.makedirs(dirLists)
+    
+dirGraphs= '../output/Graphs'
+if not os.path.exists(dirLists):
+    os.makedirs(dirGraphs)
+    
 
 os.chdir('./')
 #gene_lists from sleuth
@@ -31,8 +39,12 @@ dfBetaAG= pd.read_csv("../input/table_genocrossagebeta_genes.csv")
 dfDaf12= pd.read_csv('../input/daf12genes.csv')
 dfDaf16= pd.read_csv('../input/daf16genes.csv')
 
+dfLund= pd.read_csv('../input/lund_data.csv', header= None, names=['gene'])
 dfEckley= pd.read_csv('../input/eckley_data.csv', header= None, names=['gene'])
-dfLifespanGenes= pd.read_csv('../input/lifespan_genes.csv', header= None, names= ['gene'])
+dfLifespanGenes= pd.read_csv('../input/lifespan_genes_that_show_up.csv')
+
+dfPAN= pd.read_csv()
+
 #tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
 #if using the enrichment tool 
 tissue_df= pd.read_csv("../input/dictionary.csv")
@@ -109,171 +121,6 @@ array_of_arrays= [namesBetaA,
                   ]
 
 
-
-#==============================================================================
-# Tissue Enrichment Batch Analysis
-#==============================================================================
-aname0= 'Age Beta> {0}'.format(mag)
-aname1= 'Genotype Beta> {0}'.format(mag)
-aname2= 'Age::Genotype Beta> {0}'.format(mag)
-
-aname3= 'Age Beta< -{0}'.format(mag)
-aname4= 'Genotype Beta< -{0}'.format(mag)
-aname5= 'Age::Genotype Beta< -{0}'.format(mag)
-
-aname6= 'Age Beta> 0'
-aname7= 'Genotype Beta> 0'
-aname8= 'Age::Genotype Beta> 0'
-
-aname9= 'Age Beta< 0'
-aname10= 'Genotype Beta< 0'
-aname11= 'Age::Genotype Beta< 0'
-
-array_of_anames= [aname0,aname1,aname2,
-                  aname3,aname4,aname5,
-                  aname6,aname7,aname8,
-                  aname9,aname10,aname11]
-
-fname0= 'EnrichmentAnalysisAge_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname1= 'EnrichmentAnalysisGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname2= 'EnrichmentAnalysisAgeCrossGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-
-fname3= 'EnrichmentAnalysisAgePositive_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname4= 'EnrichmentAnalysisGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname5= 'EnrichmentAnalysisAgeCrossGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-
-fname6= 'EnrichmentAnalysisAge_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-fname7= 'EnrichmentAnalysisGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-fname8= 'EnrichmentAnalysisAgeCrossGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-
-fname9= 'EnrichmentAnalysisAge_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-fname10= 'EnrichmentAnalysisGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-fname11= 'EnrichmentAnalysisAgeCrossGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-
-array_of_fnames= [fname0, fname1, fname2,
-                  fname3, fname4, fname5, 
-                  fname6, fname7, fname8, 
-                  fname9, fname10, fname11]
-                  
-array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
-                'namesBetaAneg', 'namesBetaGneg', 'namesBetaAGneg',
-                'namesA0', 'namesG0', 'namesAG0',
-                'namesA0neg', 'namesG0neg', 'namesAG0neg'
-                ]
-                
-dirLists= '../output/Gene_lists_for_analysis'
-if not os.path.exists(dirLists):
-    os.makedirs(dirLists)
-    
-dirGraphs= '../output/Graphs'
-if not os.path.exists(dirLists):
-    os.makedirs(dirGraphs)
-    
-
-n_bars= 15 #number of results to plot bars for
-#run the whole thing for each dataset
-for i, list_of_genes in enumerate(array_of_arrays):        
-    
-    #run the tissue enrichment tool 
-    aname= array_of_anames[i] #name of the analysis
-    fname= array_of_fnames[i] #filename to store as
-    
-    print(aname)
-    print(len(list_of_genes))    
-    
-    df_analysis= \
-    hgt.implement_hypergmt_enrichment_tool(aname, list_of_genes,\
-                                    tissue_df, qvalEn, f_unused= fname)
-    
-    with open('../output/EnrichmentAnalysisResults/'+fname, 'w') as f:
-        f.write(aname)
-        df_analysis.to_csv('../output/EnrichmentAnalysisResults/'+fname)
-    
-    hgt.plotting_and_formatting(df_analysis, ytitle= aname)
-    #close
-#    plt.close()
-    
-#    #save genes with betas significantly different from zero in a list format
-#    k= array_of_strings[i][5:]
-#            
-#    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
-#    #print('filename', filename)
-#    with open(filename, 'w') as f:
-#        for gene in list_of_genes:
-#            f.write(gene)
-#            f.write('\n')
-#    f.close()
-    
-
-#==============================================================================
-# Analysis of some gold standard sets within our data
-#==============================================================================
-#Daf-12 associated genes
-ndaf12= dfDaf12.shape[0]
-ndaf16= dfDaf16.shape[0]
-print('no. of daf-12 genes in list: {0}'.format(ndaf12))
-print('no. of daf-16 genes in list: {0}'.format(ndaf16))
-print('\n')
-
-nA= dfBetaA[dfBetaA.qval < .1].shape[0]
-nG= dfBetaG[dfBetaG.qval < .1].shape[0]
-nAG= dfBetaAG[dfBetaAG.qval < .1].shape[0]
-
-print('no. of sig. genes in dfA: {0}'.format(nA))
-print('no. of sig. genes in dfG: {0}'.format(nG))
-print('no. of sig. genes in dfAG: {0}'.format(nAG))
-
-indA12= (dfBetaA.ens_gene.isin(dfDaf12.gene)) & (dfBetaA.qval < .1)
-indA16= (dfBetaA.ens_gene.isin(dfDaf16.gene)) & (dfBetaA.qval < .1)
-ndaf12A= dfBetaA.b[indA12].shape[0]
-ndaf16A= dfBetaA.b[indA16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in aging'.format(qval))
-print(ndaf12A)
-print('frac of genes {0:.2}'.format(ndaf12A/ndaf12))
-print('no. of daf-16 genes with qval < {0:.2} in aging'.format(qval))
-print(ndaf16A)
-print('frac of genes {0:.2}'.format(ndaf16A/ndaf16))
-
-dfBetaA.b[indA12].plot('kde', lw= 4, color= 'b')
-dfBetaA.b[indA16].plot('kde', lw= 4)
-plt.xlim(-5, 5)
-
-
-indG12= (dfBetaG.ens_gene.isin(dfDaf12.gene)) & (dfBetaG.qval < .1)
-indG16= (dfBetaG.ens_gene.isin(dfDaf16.gene)) & (dfBetaG.qval < .1)
-ndaf12G= dfBetaG.b[indG12].shape[0]
-ndaf16G= dfBetaG.b[indG16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in genotype'.format(qval))
-print(ndaf12G)
-print('frac of genes in dbase {0:.2}'.format(ndaf12G/nG))
-print('no. of daf-16 genes with qval < {0:.2} in genotype'.format(qval))
-print(ndaf16G)
-print('frac of genes in dbase {0:.2}'.format(ndaf16G/nG))
-
-dfBetaG.b[indG12].plot('kde', lw= 4, color= 'b')
-dfBetaG.b[indG16].plot('kde', lw= 4)
-plt.xlim(-5,5)
-
-
-indAG12= (dfBetaAG.ens_gene.isin(dfDaf12.gene)) & (dfBetaAG.qval < .1)
-indAG16= (dfBetaAG.ens_gene.isin(dfDaf16.gene)) & (dfBetaAG.qval < .1)
-
-
-ndaf12AG= dfBetaAG.b[indAG12].shape[0]
-ndaf16AG= dfBetaAG.b[indAG16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in aging::genotype'.format(qval))
-print(ndaf12AG)
-print('frac of genes in dbase {0:.2}'.format(ndaf12AG/nAG))
-print('no. of daf-16 genes with qval < {0:.2} in aging::genotype'.format(qval))
-print(ndaf16AG)
-print('frac of genes in dbase {0:.2}'.format(ndaf16AG/nAG))
-
-dfBetaAG.b[indAG12].plot('kde')
-dfBetaAG.b[indAG16].plot('kde')
-plt.xlim(-5, 5)
 
 
 def wbid_extractor(tissue_df, main_tissue):
@@ -355,7 +202,7 @@ def explode(q, dfvals, dftiss, colors, title= '', savename= '', xlab= r'$\beta$'
     
     fig, ax= plt.subplots()
     plt.plot(xnotisssig, -np.log10(ynotisssig), 'o', \
-    color=colors[0], ms=6, alpha= a, label= 'no tissue')
+    color=colors[0], ms=6, alpha= a, label= 'all others')
         
     #plot all the points not associated with a tissue
     for i, value in enumerate(tissues):
@@ -387,9 +234,235 @@ def volcano_plot_select_genes(q, dfplot, dfgenes, ax, label, col= 'b', a= .8):
     print(len(x))
     plt.gca().plot(x, -np.log10(y), 'o', color= col, ms= 6, alpha= a, label= label)    
 
+def kde_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b'):
+    """
+    Plots all the tissue specific genes,i.e. all genes that appear in one and only
+    one 'tissue'
+    """
+    g= lambda x:((dfindex.value == 1) & (dfindex.variable == x))\
+       # & (~dfindex[dfindex.value == 1].duplicated('wbid')) 
+    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
+    
+    gene_selection= g(tissue)
+    
+    
+    genes_to_plot= dfindex[gene_selection].wbid
+    
+    ind= f(genes_to_plot)
+    x= dfplot[ind].b
+    if len(x) > 15:
+        if len(x) >= 20:
+            sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    lw= 5, cut=0.5)    
+        else:
+            sns.distplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    kde= True, kde_kws={"lw": 5}, hist_kws={"alpha": .3})
+
+
+def kegg(q, dfvals, dftiss, colors, main_title= '', savename= '', xlab= r'$\beta$',\
+             ylab= r'Density'):
+    """
+    A function that generates all the relevant volcano plots
+    """
+
+    ind1= (dftiss.value==0)# | (dftiss[dftiss.value==1].duplicated('wbid'))
+    ind2= (dfvals.ens_gene.isin(dftiss[ind1].wbid)) & (dfvals.qval < q)
+    
+    xnotisssig= dfvals[ind2].b
+    
+    fig, ax= plt.subplots()
+    sns.kdeplot(xnotisssig, \
+        color=colors[0], label= 'all others n= {0}'.format(len(xnotisssig)), ax= ax, \
+        lw= 5, cut= 0.5)
+    plt.axvline(0, ls= '--', color= 'black', lw= 3)
+    #plot all the points not associated with a tissue
+    for i, value in enumerate(tissues):
+        kde_tissue(value, .1, dfvals, dftiss, label= value,\
+        col= colors[i+2], ax= ax)
+    plt.gca().legend(fontsize= 12)
+    plt.gca().set_title(main_title)
+    plt.gca().set_xlabel(xlab, fontsize= 15)
+    plt.gca().set_ylabel(ylab, fontsize= 15)
+#    plt.gca().set_xscale('symlog')
+#    plt.gca().set_yscale('log')
+    plt.gca().set_xlim(-8, 8)
+    plt.gca().set_ylim(0, .5)
+    
+    if savename:
+        fig.savefig(savename)
+
+#==============================================================================
+# Tissue Enrichment Batch Analysis
+#==============================================================================
+aname0= 'Age Beta> {0}'.format(mag)
+aname1= 'Genotype Beta> {0}'.format(mag)
+aname2= 'Age::Genotype Beta> {0}'.format(mag)
+
+aname3= 'Age Beta< -{0}'.format(mag)
+aname4= 'Genotype Beta< -{0}'.format(mag)
+aname5= 'Age::Genotype Beta< -{0}'.format(mag)
+
+aname6= 'Age Beta> 0'
+aname7= 'Genotype Beta> 0'
+aname8= 'Age::Genotype Beta> 0'
+
+aname9= 'Age Beta< 0'
+aname10= 'Genotype Beta< 0'
+aname11= 'Age::Genotype Beta< 0'
+
+array_of_anames= [aname0,aname1,aname2,
+                  aname3,aname4,aname5,
+                  aname6,aname7,aname8,
+                  aname9,aname10,aname11]
+
+fname0= 'EnrichmentAnalysisAge_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname1= 'EnrichmentAnalysisGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname2= 'EnrichmentAnalysisAgeCrossGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
+
+fname3= 'EnrichmentAnalysisAgePositive_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname4= 'EnrichmentAnalysisGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+fname5= 'EnrichmentAnalysisAgeCrossGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
+
+fname6= 'EnrichmentAnalysisAge_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+fname7= 'EnrichmentAnalysisGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+fname8= 'EnrichmentAnalysisAgeCrossGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
+
+fname9= 'EnrichmentAnalysisAge_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+fname10= 'EnrichmentAnalysisGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+fname11= 'EnrichmentAnalysisAgeCrossGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
+
+array_of_fnames= [fname0, fname1, fname2,
+                  fname3, fname4, fname5, 
+                  fname6, fname7, fname8, 
+                  fname9, fname10, fname11]
+                  
+array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
+                'namesBetaAneg', 'namesBetaGneg', 'namesBetaAGneg',
+                'namesA0', 'namesG0', 'namesAG0',
+                'namesA0neg', 'namesG0neg', 'namesAG0neg'
+                ]
+
+
+#run the enrichment analysis  for each dataset
+for i, list_of_genes in enumerate(array_of_arrays):        
+    
+    #run the tissue enrichment tool 
+    aname= array_of_anames[i] #name of the analysis
+    fname= array_of_fnames[i] #filename to store as
+    
+    print(aname)
+    print(len(list_of_genes))    
+    
+    df_analysis= \
+    hgt.implement_hypergmt_enrichment_tool(aname, list_of_genes,\
+                                    tissue_df, qvalEn, f_unused= fname)
+    
+    with open('../output/EnrichmentAnalysisResults/'+fname, 'w') as f:
+        f.write(aname)
+        df_analysis.to_csv('../output/EnrichmentAnalysisResults/'+fname)
+    
+    hgt.plotting_and_formatting(df_analysis, ytitle= aname)
+    #close
+#    plt.close()
+    
+#    #save genes with betas significantly different from zero in a list format
+#    k= array_of_strings[i][5:]
+#            
+#    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
+#    #print('filename', filename)
+#    with open(filename, 'w') as f:
+#        for gene in list_of_genes:
+#            f.write(gene)
+#            f.write('\n')
+#    f.close()
+    
+    
+    
+    
+
+#==============================================================================
+# Analysis of some gold standard sets within our data
+#==============================================================================
+#Daf-12 associated genes
+ndaf12= dfDaf12.shape[0]
+ndaf16= dfDaf16.shape[0]
+print('no. of daf-12 genes in list: {0}'.format(ndaf12))
+print('no. of daf-16 genes in list: {0}'.format(ndaf16))
+print('\n')
+
+nA= dfBetaA[dfBetaA.qval < .1].shape[0]
+nG= dfBetaG[dfBetaG.qval < .1].shape[0]
+nAG= dfBetaAG[dfBetaAG.qval < .1].shape[0]
+
+print('no. of sig. genes in dfA: {0}'.format(nA))
+print('no. of sig. genes in dfG: {0}'.format(nG))
+print('no. of sig. genes in dfAG: {0}'.format(nAG))
+
+indA12= (dfBetaA.ens_gene.isin(dfDaf12.gene)) & (dfBetaA.qval < .1)
+indA16= (dfBetaA.ens_gene.isin(dfDaf16.gene)) & (dfBetaA.qval < .1)
+ndaf12A= dfBetaA.b[indA12].shape[0]
+ndaf16A= dfBetaA.b[indA16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in aging'.format(qval))
+print(ndaf12A)
+print('frac of genes {0:.2}'.format(ndaf12A/ndaf12))
+print('no. of daf-16 genes with qval < {0:.2} in aging'.format(qval))
+print(ndaf16A)
+print('frac of genes {0:.2}'.format(ndaf16A/ndaf16))
+
+dfBetaA.b[indA12].plot('kde', lw= 4, color= 'b')
+dfBetaA.b[indA16].plot('kde', lw= 4)
+plt.xlim(-5, 5)
+
+
+indG12= (dfBetaG.ens_gene.isin(dfDaf12.gene)) & (dfBetaG.qval < .1)
+indG16= (dfBetaG.ens_gene.isin(dfDaf16.gene)) & (dfBetaG.qval < .1)
+ndaf12G= dfBetaG.b[indG12].shape[0]
+ndaf16G= dfBetaG.b[indG16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in genotype'.format(qval))
+print(ndaf12G)
+print('frac of genes in dbase {0:.2}'.format(ndaf12G/nG))
+print('no. of daf-16 genes with qval < {0:.2} in genotype'.format(qval))
+print(ndaf16G)
+print('frac of genes in dbase {0:.2}'.format(ndaf16G/nG))
+
+dfBetaG.b[indG12].plot('kde', lw= 4, color= 'b')
+dfBetaG.b[indG16].plot('kde', lw= 4)
+plt.xlim(-5,5)
+
+
+indAG12= (dfBetaAG.ens_gene.isin(dfDaf12.gene)) & (dfBetaAG.qval < .1)
+indAG16= (dfBetaAG.ens_gene.isin(dfDaf16.gene)) & (dfBetaAG.qval < .1)
+
+
+ndaf12AG= dfBetaAG.b[indAG12].shape[0]
+ndaf16AG= dfBetaAG.b[indAG16].shape[0]
+
+print('no. of daf-12 genes with qval < {0:.2} in aging::genotype'.format(qval))
+print(ndaf12AG)
+print('frac of genes in dbase {0:.2}'.format(ndaf12AG/nAG))
+print('no. of daf-16 genes with qval < {0:.2} in aging::genotype'.format(qval))
+print(ndaf16AG)
+print('frac of genes in dbase {0:.2}'.format(ndaf16AG/nAG))
+
+dfBetaAG.b[indAG12].plot('kde')
+dfBetaAG.b[indAG16].plot('kde')
+plt.xlim(-5, 5)
+
+
+
+#==============================================================================
+# 
+#==============================================================================
 #color vector:
 colors= ['#696969','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-tissues= ['body muscle', 'neuron', 'intestine', 'somatic gonad' ]
+#tissues= ['labial', 'extracellular', 'tail', 'dopaminergic' ]
+#tissues= ['mu_int', 'sex organ', 'excretory', 'gonadal' ]
+#tissues= ['gonad', 'sensillum', 'intestine', 'sex organ' ]
+#tissues= ['head', 'tail', 'embryonic' ]
+tissues= ['muscle', 'coel', 'hyp' ]
+#tissues= ['sperm', 'extracellular', 'tail', 'dopaminergic' ]
 df_exp= organize(tissues, tissue_df)
 
 
@@ -403,24 +476,63 @@ explode(qval, dfBetaG, df_exp, colors, title= 'Genotype', \
 explode(qval, dfBetaAG, df_exp, colors, title= 'Aging::Genotype', \
         savename= '../output/Graphs/agingxgenotype_tissue_specific_volcplot.png',\
         xlab= r'$\beta_{\mathrm{Aging::Genotype}}$')
-#
+
+colors2= ['#ffff33','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
+kegg(qval, dfBetaA, df_exp, colors2, main_title= 'Aging', \
+        savename= '../output/Graphs/aging_tissue_specific_kde.png',\
+        xlab= r'$\beta_{\mathrm{Aging}}$')
+kegg(qval, dfBetaG, df_exp, colors2, main_title= 'Genotype', \
+        savename= '../output/Graphs/genotype_tissue_specific_kde.png',\
+        xlab= r'$\beta_{\mathrm{Genotype}}$')
+kegg(qval, dfBetaAG, df_exp, colors2, main_title= 'Aging::Genotype', \
+        savename= '../output/Graphs/agingxgenotype_tissue_specific_kde.png',\
+        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$')
+
+        
+        
+#==============================================================================
+#Where does gold standard data fall?   
+#==============================================================================
+#colors
 fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes, ax, '')
-volcano_plot_select_genes(.1, dfBetaA, dfEckley, ax, '', 'r')
-volcano_plot_select_genes(.1, dfBetaA, dfDaf12, ax, '', 'g')
-volcano_plot_select_genes(.1, dfBetaA, dfDaf16, ax, '', 'y')
+volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
+volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
+volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
+#volcano_plot_select_genes(.1, dfBetaA, dfEckley, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaA, dfLund, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaA, dfDaf12, ax, '', 'g')
+#volcano_plot_select_genes(.1, dfBetaA, dfDaf16, ax, '', 'y')
+plt.yscale('log')
+plt.ylim(0, 100)
+plt.xlim(-8, 8)
+plt.legend()
 
 fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes, ax, '')
-volcano_plot_select_genes(.1, dfBetaG, dfEckley, ax, '', 'r')
-volcano_plot_select_genes(.1, dfBetaG, dfDaf12, ax, '', 'g')
-volcano_plot_select_genes(.1, dfBetaG, dfDaf16, ax, '', 'y')
+volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
+volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
+volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
+#volcano_plot_select_genes(.1, dfBetaG, dfEckley, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaG, dfLund, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaG, dfDaf12, ax, '', 'g')
+#volcano_plot_select_genes(.1, dfBetaG, dfDaf16, ax, '', 'y')
+plt.yscale('log')
+plt.ylim(0, 100)
+plt.xlim(-8, 8)
+plt.legend()
+
 
 fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes, ax, '')
-volcano_plot_select_genes(.1, dfBetaAG, dfEckley, ax, '', 'r')
-volcano_plot_select_genes(.1, dfBetaAG, dfDaf12, ax, '', 'g')
-volcano_plot_select_genes(.1, dfBetaAG, dfDaf16, ax, '', 'y')
+volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
+volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
+volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
+#volcano_plot_select_genes(.1, dfBetaAG, dfEckley, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaAG, dfLund, ax, '', 'r')
+#volcano_plot_select_genes(.1, dfBetaAG, dfDaf12, ax, '', 'g')
+#volcano_plot_select_genes(.1, dfBetaAG, dfDaf16, ax, '', 'y')
+plt.yscale('log')
+plt.ylim(0, 100)
+plt.xlim(-8, 8)
+plt.legend()
 
 #plt.yscale('log')
 #volcano_plot_phenotype(.1, dfBetaG, dfLifespanGenes, ax, '')
@@ -449,3 +561,26 @@ with open('lifespan_genes_that_show_up.csv', 'w') as f:
         f.write('\n')
     f.close()
     
+    
+def kde_value(tissue, q, dfplot, dfindex, ax, label, col= 'b'):
+    """
+    Plots all the tissue specific genes,i.e. all genes that appear in one and only
+    one 'tissue'
+    """
+    g= lambda x:(dfindex.effect == 1)
+    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
+    
+    gene_selection= g(tissue)
+    
+    
+    genes_to_plot= dfindex[gene_selection].wbid
+    
+    ind= f(genes_to_plot)
+    x= dfplot[ind].b
+    if len(x) > 15:
+        if len(x) >= 20:
+            sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    lw= 5, cut=0.5)    
+        else:
+            sns.distplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    kde= True, kde_kws={"lw": 5}, hist_kws={"alpha": .3})

@@ -41,9 +41,24 @@ dfDaf16= pd.read_csv('../input/daf16genes.csv')
 
 dfLund= pd.read_csv('../input/lund_data.csv', header= None, names=['gene'])
 dfEckley= pd.read_csv('../input/eckley_data.csv', header= None, names=['gene'])
-dfLifespanGenes= pd.read_csv('../input/lifespan_genes_that_show_up.csv')
+dfMurphyUp= pd.read_csv('../input/murphy_data_lifespan_extension.csv')
+dfMurphyDown= pd.read_csv('../input/murphy_data_lifespan_decrease.csv')
 
-dfPAN= pd.read_csv()
+
+dfDaf12['origin']= 'daf-12'
+dfDaf16['origin']= 'daf-16'
+dfEckley['origin']= 'Eckley'
+dfLund['origin']= 'Lund'
+dfMurphyUp['origin']= 'MurphyExt'
+dfMurphyDown['origin']= 'MurphyDec'
+frames= [dfDaf12, dfDaf16, dfEckley, dfLund, dfMurphyDown, dfMurphyUp]
+#frames= [dfEckley, dfLund]
+dfGoldStandard = pd.concat(frames)
+
+#from wormbase
+dfLifespanGenes= pd.read_csv('../input/lifespan gene list complete.csv')
+
+#dfPAN= pd.read_csv()
 
 #tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
 #if using the enrichment tool 
@@ -167,6 +182,34 @@ def organize(names, tissue_df):
     df1= pd.melt(df, id_vars='wbid', value_vars=tissues)
     return df1
 
+def fix_axes(**kwargs):
+    """
+    Makes modifications to axes to ensure proper plotting.
+    """ 
+    title= kwargs.pop('title',  '')
+    savename= kwargs.pop('savename', '')
+    xlab= kwargs.pop('xlab', r'$\beta$')
+    ylab= kwargs.pop('ylab', r'log$_{10}Q$')
+    yscale= kwargs.pop('yscale', 'log')
+    xscale= kwargs.pop('xscale', 'symlog')
+    xlim= kwargs.pop('xlim', [])
+    ylim= kwargs.pop('xlim', [])
+    loc= kwargs.pop('loc', 1)
+    
+    plt.legend(fontsize= 12, loc= loc)
+    plt.title(title)
+    plt.xlabel(xlab, fontsize= 15)
+    plt.ylabel(ylab, fontsize= 15)
+    plt.xscale(xscale)
+    plt.yscale(yscale)
+    
+    if len(xlim) != 0:
+        plt.xlim(xlim)
+    if len(ylim) != 0:
+        plt.ylim(ylim)
+    
+    if savename:
+        plt.savefig(savename)
 
 def volcano_plot_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b', a= .8):
     """
@@ -178,8 +221,6 @@ def volcano_plot_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b', a= .8):
     f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
     
     gene_selection= g(tissue)
-    
-    
     genes_to_plot= dfindex[gene_selection].wbid
     
     ind= f(genes_to_plot)
@@ -188,12 +229,12 @@ def volcano_plot_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b', a= .8):
     plt.gca().plot(x, -np.log10(y), 'o', color= col, ms= 6, alpha= a, label= label)    
 
 
-def explode(q, dfvals, dftiss, colors, title= '', savename= '', xlab= r'$\beta$',\
-             ylab= r'log$_{10}Q$',a= .7):
+def explode(q, dfvals, dftiss, colors, **kwargs):
     """
     A function that generates all the relevant volcano plots
     """
-
+    a= kwargs.pop('a', .7)
+    
     ind1= (dftiss.value==0) | (dftiss[dftiss.value==1].duplicated('wbid'))
     ind2= (dfvals.ens_gene.isin(dftiss[ind1].wbid)) & (dfvals.qval < q)
     
@@ -206,33 +247,65 @@ def explode(q, dfvals, dftiss, colors, title= '', savename= '', xlab= r'$\beta$'
         
     #plot all the points not associated with a tissue
     for i, value in enumerate(tissues):
-        volcano_plot_tissue(value, .1, dfvals, dftiss, label= value,\
+        volcano_plot_tissue(value, q, dfvals, dftiss, label= value,\
         col= colors[i+2], ax= ax, a=a)
-    plt.legend(fontsize= 12)
-    plt.title(title)
-    plt.xlabel(xlab, fontsize= 15)
-    plt.ylabel(ylab, fontsize= 15)
-    plt.xscale('symlog')
-    plt.yscale('log')
-    plt.xlim(-12, 12)
-    plt.ylim(.9, 100)
-    
-    if savename:
-        plt.savefig(savename)
         
-def volcano_plot_select_genes(q, dfplot, dfgenes, ax, label, col= 'b', a= .8):
+def volcano_plot_goldstandards(q, dfplot, dfgenes, ax, colors, a= 1, **kwargs):
     """
     Plots all the tissue specific genes,i.e. all genes that appear in one and only
     one 'tissue'
     """
-    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)    
+    f= lambda x: (dfplot.ens_gene.isin(x))# & (dfplot.qval < q)    
     
-    ind= f(dfgenes.gene.values)
+    nvals= len(dfgenes.origin.unique())
+    ncolors= len(colors)
+    if  nvals > ncolors:
+        raise ValueError('Please provide as many colors as there are datasets. {0} {1}'
+        .format(ncolors, nvals))
+    
+    for i, origin in enumerate(dfgenes.origin.unique()):
+        
+        ind= f(dfgenes[dfgenes.origin == origin].gene.values)
+        x= dfplot[ind].b
+        y= dfplot[ind].qval
+        
+        ngsig= len(dfplot[ind & (dfplot.qval < .1)].ens_gene.unique()) #no. of genes showing up in assay
+        tg= len(dfgenes[dfgenes.origin == origin].gene.unique()) #no. of genes in dataset
+        label= '{0} {1}= {2}, tot= {3}'.format(origin, r'$n_{sig}$', ngsig, tg)
 
-    x= dfplot[ind].b
-    y= dfplot[ind].qval
-    print(len(x))
-    plt.gca().plot(x, -np.log10(y), 'o', color= col, ms= 6, alpha= a, label= label)    
+        plt.gca().plot(x, -np.log10(y), 'o', color= colors[i], ms= 6, alpha= a, label= label)  
+    
+def explode_goldstandards(q, dfplot, dfgenes, colors, **kwargs):
+    """
+    A function that generates all the relevant volcano plots
+    """
+    a= kwargs.pop('a', .7)
+    loc= kwargs.pop('loc', 'lower right')
+    
+    ind1= (~dfplot.ens_gene.isin(dfgenes.gene)) & (dfplot.qval < q) #sig genes not in any given df
+    ind2= (~dfplot.ens_gene.isin(dfgenes.gene)) & (dfplot.qval > q) #nonsig genes
+    
+    xnotsig= dfplot[ind2].b
+    ynotsig= dfplot[ind2].qval
+    
+    xsig= dfplot[ind1].b
+    ysig= dfplot[ind1].qval
+    
+    nnotsig= len(dfplot[ind2].ens_gene.unique())
+    fig, ax= plt.subplots()
+    plt.plot(xnotsig, -np.log10(ynotsig), 'o', \
+    color=colors[0], ms=6, alpha= .1, label= 'not sig n= {0}'.format(nnotsig))
+    
+    nsig= len(dfplot[ind2].ens_gene.unique())
+    plt.plot(xsig, -np.log10(ysig), 'o', \
+    color=colors[1], ms=6, alpha= .2, label= 'sig n= {0}'.format(nsig))
+    
+    #plot all the points not associated with a tissue
+    volcano_plot_goldstandards(q, dfplot, dfgenes, colors= colors[2:], ax= ax, a=a)
+    
+    fix_axes(loc= loc, **kwargs)
+    leg= ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    leg.get_frame().set_facecolor('#00FFCC')
 
 def kde_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b'):
     """
@@ -251,20 +324,22 @@ def kde_tissue(tissue, q, dfplot, dfindex, ax, label, col= 'b'):
     ind= f(genes_to_plot)
     x= dfplot[ind].b
     if len(x) > 15:
-        if len(x) >= 20:
-            sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
-                    lw= 5, cut=0.5)    
-        else:
-            sns.distplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
-                    kde= True, kde_kws={"lw": 5}, hist_kws={"alpha": .3})
+        sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    lw= 5, cut=0.5)        
+        if len(x) <= 20:
+            sns.rugplot(x, color= col, ax= ax, height= .07, lw= 2)
 
-
-def kegg(q, dfvals, dftiss, colors, main_title= '', savename= '', xlab= r'$\beta$',\
-             ylab= r'Density'):
+def kegg(q, dfvals, dftiss, colors, **kwargs):
     """
     A function that generates all the relevant volcano plots
     """
-
+    
+    #set scale parameters
+    yscale= kwargs.pop('yscale', 'linear')
+    xscale= kwargs.pop('xscale', 'linear')
+    xlim= kwargs.pop('xlim', [-8,8])
+    ylim= kwargs.pop('ylim', [0, .5])
+    
     ind1= (dftiss.value==0)# | (dftiss[dftiss.value==1].duplicated('wbid'))
     ind2= (dfvals.ens_gene.isin(dftiss[ind1].wbid)) & (dfvals.qval < q)
     
@@ -279,18 +354,93 @@ def kegg(q, dfvals, dftiss, colors, main_title= '', savename= '', xlab= r'$\beta
     for i, value in enumerate(tissues):
         kde_tissue(value, .1, dfvals, dftiss, label= value,\
         col= colors[i+2], ax= ax)
-    plt.gca().legend(fontsize= 12)
-    plt.gca().set_title(main_title)
-    plt.gca().set_xlabel(xlab, fontsize= 15)
-    plt.gca().set_ylabel(ylab, fontsize= 15)
-#    plt.gca().set_xscale('symlog')
-#    plt.gca().set_yscale('log')
-    plt.gca().set_xlim(-8, 8)
-    plt.gca().set_ylim(0, .5)
-    
-    if savename:
-        fig.savefig(savename)
+        
+    fix_axes(xscale= xscale, yscale= yscale, xlim= xlim, ylim= ylim, **kwargs)
 
+
+def kde_value(value, q, dfplot, dfindex, ax, label, col= 'b', min_length= 10, rug_length= 20):
+    """
+    Plots all the value specific genes,i.e. all genes that appear in one and only
+    one 'tissue'
+    """
+    g= (dfindex.effect == value)
+    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
+        
+    
+    genes_to_plot= dfindex[g].gene
+    
+    ind= f(genes_to_plot)
+    x= dfplot[ind].b
+    
+    if len(x) > min_length:
+        sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
+                    lw= 5, cut=0.5)    
+
+        if len(x) < rug_length:
+            sns.rugplot(x, color= col, ax= ax, height= .1, lw= 2)
+    else:
+        print('too few values to plot {0}'.format(label+' n= {0}'.format(len(x))))
+
+def kegg_compare_byval(value, q, Ldf, dfindex, colors, **kwargs):
+    """
+    Given a list of dataframes, Ldf, and a list of target genes dfindex, compare the 
+    distributions of genes within dfindex throughout every list for genes with
+    trait 'value'. 
+    Ldf= a list of dataframes. must have df.ens_gene, df.b, df.qval exactly as written
+    dfindex= a list of genes to select, must have df.gene, df.effect
+    value= a trait associated with genes in dfindex, (an entry in df.effect)
+    colors= an array of len(Ldf) of colors
+    """
+    dfnames= kwargs.pop('dfnames', ['']*len(Ldf))
+    xlim= kwargs.pop('xlim', [-10,10])
+    ylim= kwargs.pop('ylim', [0, 1])
+    zeroline= kwargs.pop('zeroline', True)
+    xscale= kwargs.pop('xscale', 'linear')
+    yscale= kwargs.pop('yscale', 'linear')
+    
+    if len(Ldf) < len(colors):
+        raise ValueError('Please provide as many colors as dataframes')
+    
+    if len(dfindex[dfindex.effect == value]) == 0:
+        raise ValueError('Value \'{0}\' is not containted within dfindex'.format(value))
+    
+    if dfnames:
+        if len(Ldf) != len(dfnames):
+            raise ValueError('dfnames must be the same length as Ldf')
+    
+    fig, ax= plt.subplots()
+    for i, df in enumerate(Ldf):
+        kde_value(value, q, df, dfindex, ax, dfnames[i], colors[i])
+    
+    if zeroline:
+        plt.axvline(0, ls= '--', color= 'black', lw= 2.5)
+        
+    fix_axes(xlim= xlim, ylim= ylim, xscale= xscale, yscale= yscale, **kwargs)
+
+
+def kegg_compareall_byval(q, Ldf, dfindex, colors, **kwargs):
+    """
+    Given a list of dataframes Ldf, and a list of selection genes with criteria
+    make all the plots of interest
+    """
+    vals= dfindex.effect.unique()
+    savenames= kwargs.pop('savenames', ['']*len(vals))
+    titles= kwargs.pop('titles', ['']*len(vals))
+    
+    if len(titles) <= len(vals):
+        raise ValueError('There are not enough titles for plots'
+        .format(len(titles), len(vals)))
+        
+    if len(savenames) != len(vals):
+        raise ValueError('list savenames ({0}) must be the same length as Ldf ({1})'
+        .format(len(savenames), len(Ldf)))    
+        
+    for i, value in enumerate(vals):
+        savename= savenames[i]
+        title= titles[i]
+        kegg_compare_byval(value, q, Ldf, dfindex, colors, savename= savename, 
+                           title= title, **kwargs)
+    
 #==============================================================================
 # Tissue Enrichment Batch Analysis
 #==============================================================================
@@ -309,7 +459,6 @@ aname8= 'Age::Genotype Beta> 0'
 aname9= 'Age Beta< 0'
 aname10= 'Genotype Beta< 0'
 aname11= 'Age::Genotype Beta< 0'
-
 array_of_anames= [aname0,aname1,aname2,
                   aname3,aname4,aname5,
                   aname6,aname7,aname8,
@@ -330,19 +479,15 @@ fname8= 'EnrichmentAnalysisAgeCrossGenotype_AllPosBeta_qval_{0}.csv'.format(qval
 fname9= 'EnrichmentAnalysisAge_AllNegBeta_qval_{0}.csv'.format(qvalEn)
 fname10= 'EnrichmentAnalysisGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
 fname11= 'EnrichmentAnalysisAgeCrossGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-
 array_of_fnames= [fname0, fname1, fname2,
                   fname3, fname4, fname5, 
                   fname6, fname7, fname8, 
-                  fname9, fname10, fname11]
-                  
+                  fname9, fname10, fname11]               
 array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
                 'namesBetaAneg', 'namesBetaGneg', 'namesBetaAGneg',
                 'namesA0', 'namesG0', 'namesAG0',
                 'namesA0neg', 'namesG0neg', 'namesAG0neg'
                 ]
-
-
 #run the enrichment analysis  for each dataset
 for i, list_of_genes in enumerate(array_of_arrays):        
     
@@ -352,11 +497,9 @@ for i, list_of_genes in enumerate(array_of_arrays):
     
     print(aname)
     print(len(list_of_genes))    
-    
     df_analysis= \
     hgt.implement_hypergmt_enrichment_tool(aname, list_of_genes,\
                                     tissue_df, qvalEn, f_unused= fname)
-    
     with open('../output/EnrichmentAnalysisResults/'+fname, 'w') as f:
         f.write(aname)
         df_analysis.to_csv('../output/EnrichmentAnalysisResults/'+fname)
@@ -375,97 +518,42 @@ for i, list_of_genes in enumerate(array_of_arrays):
 #            f.write(gene)
 #            f.write('\n')
 #    f.close()
-    
-    
-    
-    
-
 #==============================================================================
 # Analysis of some gold standard sets within our data
 #==============================================================================
 #Daf-12 associated genes
 ndaf12= dfDaf12.shape[0]
 ndaf16= dfDaf16.shape[0]
-print('no. of daf-12 genes in list: {0}'.format(ndaf12))
-print('no. of daf-16 genes in list: {0}'.format(ndaf16))
-print('\n')
-
 nA= dfBetaA[dfBetaA.qval < .1].shape[0]
 nG= dfBetaG[dfBetaG.qval < .1].shape[0]
 nAG= dfBetaAG[dfBetaAG.qval < .1].shape[0]
-
-print('no. of sig. genes in dfA: {0}'.format(nA))
-print('no. of sig. genes in dfG: {0}'.format(nG))
-print('no. of sig. genes in dfAG: {0}'.format(nAG))
-
+#da12 and daf16 genes with sig age betas
 indA12= (dfBetaA.ens_gene.isin(dfDaf12.gene)) & (dfBetaA.qval < .1)
 indA16= (dfBetaA.ens_gene.isin(dfDaf16.gene)) & (dfBetaA.qval < .1)
 ndaf12A= dfBetaA.b[indA12].shape[0]
 ndaf16A= dfBetaA.b[indA16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in aging'.format(qval))
-print(ndaf12A)
-print('frac of genes {0:.2}'.format(ndaf12A/ndaf12))
-print('no. of daf-16 genes with qval < {0:.2} in aging'.format(qval))
-print(ndaf16A)
-print('frac of genes {0:.2}'.format(ndaf16A/ndaf16))
-
-dfBetaA.b[indA12].plot('kde', lw= 4, color= 'b')
-dfBetaA.b[indA16].plot('kde', lw= 4)
-plt.xlim(-5, 5)
-
-
+#da12 and daf16 genes with sig genotype betas
 indG12= (dfBetaG.ens_gene.isin(dfDaf12.gene)) & (dfBetaG.qval < .1)
 indG16= (dfBetaG.ens_gene.isin(dfDaf16.gene)) & (dfBetaG.qval < .1)
 ndaf12G= dfBetaG.b[indG12].shape[0]
 ndaf16G= dfBetaG.b[indG16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in genotype'.format(qval))
-print(ndaf12G)
-print('frac of genes in dbase {0:.2}'.format(ndaf12G/nG))
-print('no. of daf-16 genes with qval < {0:.2} in genotype'.format(qval))
-print(ndaf16G)
-print('frac of genes in dbase {0:.2}'.format(ndaf16G/nG))
-
-dfBetaG.b[indG12].plot('kde', lw= 4, color= 'b')
-dfBetaG.b[indG16].plot('kde', lw= 4)
-plt.xlim(-5,5)
-
-
+#da12 and daf16 genes with sig age:: genotype betas
 indAG12= (dfBetaAG.ens_gene.isin(dfDaf12.gene)) & (dfBetaAG.qval < .1)
 indAG16= (dfBetaAG.ens_gene.isin(dfDaf16.gene)) & (dfBetaAG.qval < .1)
-
-
 ndaf12AG= dfBetaAG.b[indAG12].shape[0]
 ndaf16AG= dfBetaAG.b[indAG16].shape[0]
-
-print('no. of daf-12 genes with qval < {0:.2} in aging::genotype'.format(qval))
-print(ndaf12AG)
-print('frac of genes in dbase {0:.2}'.format(ndaf12AG/nAG))
-print('no. of daf-16 genes with qval < {0:.2} in aging::genotype'.format(qval))
-print(ndaf16AG)
-print('frac of genes in dbase {0:.2}'.format(ndaf16AG/nAG))
-
-dfBetaAG.b[indAG12].plot('kde')
-dfBetaAG.b[indAG16].plot('kde')
-plt.xlim(-5, 5)
-
-
-
 #==============================================================================
 # 
 #==============================================================================
 #color vector:
 colors= ['#696969','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-#tissues= ['labial', 'extracellular', 'tail', 'dopaminergic' ]
+tissues= ['labial', 'extracellular', 'tail', 'dopaminergic' ]
 #tissues= ['mu_int', 'sex organ', 'excretory', 'gonadal' ]
 #tissues= ['gonad', 'sensillum', 'intestine', 'sex organ' ]
 #tissues= ['head', 'tail', 'embryonic' ]
-tissues= ['muscle', 'coel', 'hyp' ]
+#tissues= ['muscle', 'coel', 'hyp' ]
 #tissues= ['sperm', 'extracellular', 'tail', 'dopaminergic' ]
 df_exp= organize(tissues, tissue_df)
-
-
 
 explode(qval, dfBetaA, df_exp, colors, title= 'Aging', \
         savename= '../output/Graphs/aging_tissue_specific_volcplot.png',\
@@ -478,65 +566,26 @@ explode(qval, dfBetaAG, df_exp, colors, title= 'Aging::Genotype', \
         xlab= r'$\beta_{\mathrm{Aging::Genotype}}$')
 
 colors2= ['#ffff33','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-kegg(qval, dfBetaA, df_exp, colors2, main_title= 'Aging', \
+kegg(qval, dfBetaA, df_exp, colors2, title= 'Aging', \
         savename= '../output/Graphs/aging_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Aging}}$')
-kegg(qval, dfBetaG, df_exp, colors2, main_title= 'Genotype', \
+kegg(qval, dfBetaG, df_exp, colors2, title= 'Genotype', \
         savename= '../output/Graphs/genotype_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Genotype}}$')
-kegg(qval, dfBetaAG, df_exp, colors2, main_title= 'Aging::Genotype', \
+kegg(qval, dfBetaAG, df_exp, colors2, title= 'Aging::Genotype', \
         savename= '../output/Graphs/agingxgenotype_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Aging::Genotype}}$')
-
-        
-        
 #==============================================================================
 #Where does gold standard data fall?   
 #==============================================================================
 #colors
-fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
-volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
-volcano_plot_select_genes(.1, dfBetaA, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
-#volcano_plot_select_genes(.1, dfBetaA, dfEckley, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaA, dfLund, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaA, dfDaf12, ax, '', 'g')
-#volcano_plot_select_genes(.1, dfBetaA, dfDaf16, ax, '', 'y')
-plt.yscale('log')
-plt.ylim(0, 100)
-plt.xlim(-8, 8)
-plt.legend()
+colors= ['#a65628','#ffff33','#ff7f00','#984ea3','#4daf4a','#377eb8', '#e41a1c', '#f781bf']
 
-fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
-volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
-volcano_plot_select_genes(.1, dfBetaG, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
-#volcano_plot_select_genes(.1, dfBetaG, dfEckley, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaG, dfLund, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaG, dfDaf12, ax, '', 'g')
-#volcano_plot_select_genes(.1, dfBetaG, dfDaf16, ax, '', 'y')
-plt.yscale('log')
-plt.ylim(0, 100)
-plt.xlim(-8, 8)
-plt.legend()
+explode_goldstandards(qval, dfBetaA, dfGoldStandard, colors= colors)
+explode_goldstandards(qval, dfBetaG, dfGoldStandard, colors= colors)
+explode_goldstandards(qval, dfBetaAG, dfGoldStandard, colors= colors)
 
 
-fig, ax= plt.subplots()
-volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'positive'], ax, 'positive', colors[0])
-volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'negative'], ax, 'negative', colors[1])
-volcano_plot_select_genes(.1, dfBetaAG, dfLifespanGenes[dfLifespanGenes.effect == 'variable'], ax, 'variable', colors[2])
-#volcano_plot_select_genes(.1, dfBetaAG, dfEckley, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaAG, dfLund, ax, '', 'r')
-#volcano_plot_select_genes(.1, dfBetaAG, dfDaf12, ax, '', 'g')
-#volcano_plot_select_genes(.1, dfBetaAG, dfDaf16, ax, '', 'y')
-plt.yscale('log')
-plt.ylim(0, 100)
-plt.xlim(-8, 8)
-plt.legend()
-
-#plt.yscale('log')
-#volcano_plot_phenotype(.1, dfBetaG, dfLifespanGenes, ax, '')
-#volcano_plot_phenotype(.1, dfBetaAG, dfLifespanGenes, ax, '')
 
 #figure out how many genes in dfLIfespan show up in this analysis
 f= lambda x: (dfBetaA.ens_gene.isin(x)) & (dfBetaA.qval < .1)    
@@ -560,27 +609,21 @@ with open('lifespan_genes_that_show_up.csv', 'w') as f:
         f.write(gene)
         f.write('\n')
     f.close()
-    
-    
-def kde_value(tissue, q, dfplot, dfindex, ax, label, col= 'b'):
-    """
-    Plots all the tissue specific genes,i.e. all genes that appear in one and only
-    one 'tissue'
-    """
-    g= lambda x:(dfindex.effect == 1)
-    f= lambda x: (dfplot.ens_gene.isin(x)) & (dfplot.qval < q)
-    
-    gene_selection= g(tissue)
-    
-    
-    genes_to_plot= dfindex[gene_selection].wbid
-    
-    ind= f(genes_to_plot)
-    x= dfplot[ind].b
-    if len(x) > 15:
-        if len(x) >= 20:
-            sns.kdeplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
-                    lw= 5, cut=0.5)    
-        else:
-            sns.distplot(x, color= col,label= label+' n= {0}'.format(len(x)), ax= ax, 
-                    kde= True, kde_kws={"lw": 5}, hist_kws={"alpha": .3})
+
+
+Ldf= [dfBetaA, dfBetaG, dfBetaAG] #list of dataframes
+dfnames= ['Age', 'Genotype', 'Age::Genotype']
+titles= ['Genes associated positively with lifespan', 
+         'Genes associated negatively with lifespan',
+         'Genes associated variably with lifespan',
+         'Genes associated with lifespan but unannotated',
+         ]
+colors= ['#377eb8','#e41a1c','#4daf4a']
+fnames= ['../output/Graphs/positive_aging.png','../output/Graphs/negative_aging.png',
+         '../output/Graphs/variable_aging.png','../output/Graphs/unannotated_aging.png']
+
+kegg_compareall_byval(qval, Ldf, dfLifespanGenes, colors, savenames= fnames,
+                   dfnames= dfnames, xscale= 'symlog', titles=  titles)
+
+
+

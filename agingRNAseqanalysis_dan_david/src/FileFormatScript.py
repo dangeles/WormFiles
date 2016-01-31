@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 import pandas as pd
 
 #Filenames!
-fileInput= '../input/lund_data.csv'; sepInput= ','; comInput= '#';
+fileInput= '../input/lifespan gene list complete.csv'; sepInput= ','; comInput= '#';
 newFile= '../input/eckley_data.csv'
 
 filename= '../input/c_elegans.PRJNA13758.WS241.livegeneIDs.unmaprm.txt'
@@ -21,8 +21,10 @@ names= pd.read_csv(filename, sep= separator, comment= comments)
 #Load the control database
 df= pd.read_csv(fileInput, sep= sepInput, comment= comInput)
 
-    
-names[(names.HumanReadable.isin(df.gene)) | (names.GeneName.isin(df.gene))].WBID. to_csv(newFile, index= False)
+
+names[(names.HumanReadable.isin(df.gene)) | (names.GeneName.isin(df.gene))].WBID
+df= df[df.gene.isin(names.HumanReadable)]
+df['wbid']= names[(names.HumanReadable.isin(df.gene)) | (names.GeneName.isin(df.gene))].WBID#. to_csv(newFile, index= False)
 #df[df.gene.isin(names.HumanReadable)].gene= names[(names.HumanReadable.isin(df.gene))].WBID.values
 
 

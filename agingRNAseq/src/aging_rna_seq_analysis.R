@@ -18,7 +18,7 @@ devtools::install_github("pachterlab/sleuth")
 library("sleuth")
 
 #point to your directory+
-base_dir <- "~/Desktop/aging_rnaseq"
+base_dir <- "~/WormFiles/agingRNAseq/input/sleuth"
 
 #get ids
 sample_id <- dir(file.path(base_dir, "results"))
@@ -26,9 +26,10 @@ kal_dirs <- sapply(sample_id, function(id) file.path(base_dir, "results", id, "k
 kal_dirs
 
 
-s2c <- read.table(file.path(base_dir, "aging_rnaseq_info.txt"), header = TRUE, stringsAsFactors=FALSE)
-s2c <- dplyr::select(s2c, sample = run_accession, genotype, age)
+s2c <- read.table(file.path(base_dir, "aging_rnaseq_info.txt"), header = TRUE, stringsAsFactors= FALSE)
+s2c <- dplyr::select(s2c, sample = experiment, genotype, age)
 s2c <- dplyr::mutate(s2c, path = kal_dirs)
+print(s2c)
 
 
 #prepend and make object, state maximum model here
@@ -36,21 +37,22 @@ so <- sleuth_prep(s2c, ~ genotype+age+genotype*age, target_mapping= t2g)
 
 #fit the models
 so <- sleuth_fit(so,~ genotype + age + genotype*age, fit_name = 'interaction')
-so <- sleuth_fit(so,~ genotype, fit_name = 'null_genotype')
-so <- sleuth_fit(so,~ age, fit_name = 'null_age')
-so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
+#so <- sleuth_fit(so,~ genotype, fit_name = 'null_genotype')
+#so <- sleuth_fit(so,~ age, fit_name = 'null_age')
+#so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
 
 #Wald test implementations
 so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'full')
 so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'full')
 
-so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'null_genotype')
-so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'null_age')
+#so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'null_genotype')
+#so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'null_age')
 
+so <- sleuth_test(so, which_beta = '(Intercept)', which_model= 'interaction')
 so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypeN2:ageyoung', which_model = 'interaction')
 
-so <- sleuth_lrt(so, 'null_genotype', 'full')
+so <- sleuth_lrt(so, 'full', 'interaction')
 
 sleuth_live(so)

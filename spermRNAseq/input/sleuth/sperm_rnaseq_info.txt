@@ -1,0 +1,13 @@
+run_accession	genotype	age	sperm	sample
+N2Y_14945	N2	young	full	1
+N2Y_14946	N2	young	full	1
+N2Y_14947	N2	young	full	1
+N2A_14948	N2	old	deplete	1
+N2A_14949	N2	old	deplete	1
+N2A_14950	N2	old	deplete	1
+JKY_15044	fog1	young	deplete	1
+JKY_15045	fog1	young	deplete	1
+JKY_15046	fog1	young	deplete	1
+JKA_15344	fog1	old	deplete	1
+JKA_15345	fog1	old	deplete	1
+JKA_15346	fog1	old	deplete	1

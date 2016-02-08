@@ -39,20 +39,38 @@ so <- sleuth_prep(s2c, ~ genotype+age+genotype*age, target_mapping= t2g)
 so <- sleuth_fit(so,~ genotype + age + genotype*age, fit_name = 'interaction')
 #so <- sleuth_fit(so,~ genotype, fit_name = 'null_genotype')
 #so <- sleuth_fit(so,~ age, fit_name = 'null_age')
-#so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
+so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
 
 #Wald test implementations
+#no interactions
+so <- sleuth_wt(so, which_beta = '(Intercept)', which_model = 'full')
 so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'full')
 so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'full')
-
-#so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'null_genotype')
-#so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'null_age')
-
-so <- sleuth_test(so, which_beta = '(Intercept)', which_model= 'interaction')
+#model with interaction
+so <- sleuth_wt(so, which_beta = '(Intercept)', which_model= 'interaction')
 so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypeN2:ageyoung', which_model = 'interaction')
-
+#likelihood test
 so <- sleuth_lrt(so, 'full', 'interaction')
 
+#if you want to look at shiny
 sleuth_live(so)
+
+#write results to tables
+results_table <- sleuth_results(so, 'ageyoung','interaction', test_type= 'wt')
+write.csv(results_table, "~/WormFiles/agingRNAseq/input/agebeta_wt.csv")
+
+results_table <- sleuth_results(so, 'genotypeN2','interaction', test_type= 'wt')
+write.csv(results_table, "~/WormFiles/agingRNAseq/input/genotypebeta_wt.csv")
+
+results_table <- sleuth_results(so, 'genotypeN2:ageyoung','interaction', test_type= 'wt')
+write.csv(results_table, "~/WormFiles/agingRNAseq/input/genotypecrossagebeta_wt.csv")
+
+results_table <- sleuth_results(so, '(Intercept)','interaction', test_type= 'wt')
+write.csv(results_table, "~/WormFiles/agingRNAseq/input/intercept_wt.csv")
+
+results_table <- sleuth_results(so, 'full:interaction', test_type='lrt')
+write.csv(results_table, "~/WormFiles/agingRNAseq/input/lrt.csv")
+
+

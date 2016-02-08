@@ -39,9 +39,12 @@ if not os.path.exists(dirLists):
 
 os.chdir('./')
 #gene_lists from sleuth
-dfBetaA= pd.read_csv("../input/table_agebeta_genes.csv")
-dfBetaG= pd.read_csv("../input/table_genobeta_genes.csv")
-dfBetaAG= pd.read_csv("../input/table_genocrossagebeta_genes.csv")
+#pos beta means high old adults
+dfBetaA= pd.read_csv("../input/agebeta_wt.csv")
+#pos beta means high in fog2
+dfBetaG= pd.read_csv("../input/genotypebeta_wt.csv")
+#pos beta means high in fog2-aged
+dfBetaAG= pd.read_csv("../input/genotypecrossagebeta_wt.csv")
 
 #sort by target_id
 dfBetaA.sort_values('target_id', inplace= True)
@@ -93,57 +96,26 @@ tissue_df= pd.read_csv("../input/dictionary.csv")
 
 #slice all the relevant gene names out
 #remove all isoforms!
-namesBetaA= \
-        dfBetaA[\
-        (dfBetaA.qval < qval) & ((dfBetaA.b > mag))]\
-        .ens_gene.unique()
-namesBetaG= \
-        dfBetaG[\
-        (dfBetaG.qval < qval) & ((dfBetaG.b > mag))]\
-        .ens_gene.unique()
-namesBetaAG= \
-        dfBetaAG[\
-        (dfBetaAG.qval < qval) & ((dfBetaAG.b > mag))]\
-        .ens_gene.unique()
-        
-namesBetaAneg= \
-        dfBetaA[\
-        (dfBetaA.qval < qval) & ((dfBetaA.b < -mag))]\
-        .ens_gene.unique()
-namesBetaGneg= \
-        dfBetaG[\
-        (dfBetaG.qval < qval) & ((dfBetaG.b < -mag))]\
-        .ens_gene.unique()
-namesBetaAGneg= \
-        dfBetaAG[\
-        (dfBetaAG.qval < qval) & ((dfBetaAG.b < -mag))]\
-        .ens_gene.unique()
+
+g= lambda x: (x.qval < qval) & (x.b > mag)
+namesBetaA= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesBetaG= dfBetaG[g(dfBetaG)].ens_gene.unique()
+namesBetaAG= dfBetaAG[g(dfBetaAG)].ens_gene.unique()
+
+g= lambda x: (x.qval < qval) & (x.b < -mag)
+namesBetaAneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesBetaGneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesBetaAGneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
     
-namesA0= \
-        dfBetaA[\
-        (dfBetaA.qval < qval) & (dfBetaAG.b > 0)]\
-        .ens_gene.unique()
-namesG0= \
-        dfBetaG[\
-        (dfBetaG.qval < qval)& (dfBetaAG.b > 0)]\
-        .ens_gene.unique()
-namesAG0= \
-        dfBetaAG[\
-        (dfBetaAG.qval < qval)& (dfBetaAG.b > 0)]\
-        .ens_gene.unique()
+g= lambda x: (x.qval < qval) & (x.b > 0)
+namesA0= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesG0= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesAG0= dfBetaA[g(dfBetaA)].ens_gene.unique()
         
-namesA0neg= \
-        dfBetaA[\
-        (dfBetaA.qval < qval) & (dfBetaAG.b < 0)]\
-        .ens_gene.unique()
-namesG0neg= \
-        dfBetaG[\
-        (dfBetaG.qval < qval)& (dfBetaAG.b < 0)]\
-        .ens_gene.unique()
-namesAG0neg= \
-        dfBetaAG[\
-        (dfBetaAG.qval < qval)& (dfBetaAG.b < 0)]\
-        .ens_gene.unique()
+g= lambda x: (x.qval < qval) & (x.b < 0)
+namesA0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesG0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
+namesAG0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
 
 #place all the relevant gene lists in this array
 array_of_arrays= [namesBetaA,
@@ -313,15 +285,15 @@ rsq.explode_goldstandards(qval, dfBetaAG, dfLifespanGenes, colors= colors, title
 # Count how many lifespan genes show up
 #==============================================================================
 #figure out how many genes in dfLIfespan show up in this analysis
-f= lambda x: (dfBetaA.ens_gene.isin(x)) & (dfBetaA.qval < .1)    
+f= lambda x: (dfBetaA.ens_gene.isin(x)) & (dfBetaA.qval < qval)    
 ind= f(dfLifespanGenes.gene.values)
 m= dfBetaA[ind].ens_gene.values
 
-f= lambda x: (dfBetaG.ens_gene.isin(x)) & (dfBetaG.qval < .1)    
+f= lambda x: (dfBetaG.ens_gene.isin(x)) & (dfBetaG.qval < qval)    
 ind= f(dfLifespanGenes.gene.values)
 m= np.append(m, dfBetaG[ind].ens_gene.values)
 
-f= lambda x: (dfBetaAG.ens_gene.isin(x)) & (dfBetaAG.qval < .1)    
+f= lambda x: (dfBetaAG.ens_gene.isin(x)) & (dfBetaAG.qval < qval)    
 ind= f(dfLifespanGenes.gene.values)
 m= np.append(m, dfBetaAG[ind].ens_gene.values)
 
@@ -342,12 +314,14 @@ fnames= ['../output/Graphs/positive_aging.png','../output/Graphs/negative_aging.
 #==============================================================================
 # KDE for Lifespan Genes from Wormbase
 #==============================================================================
+
 rsq.kegg_compareall_byval(qval, Ldf, dfLifespanGenes, colors, savenames= fnames,
                    dfnames= dfnames, xscale= 'symlog', ylab= 'Density', save= True)
                    
 #==============================================================================
 # KDE for Gene Targets
 #==============================================================================
+dfTargets.columns= ['gene', 'effect']
 fnames= ['../output/Graphs/gpcrs.png','../output/Graphs/ion_transporters.png',
          '../output/Graphs/axonogenesis_genes.png', '../output/Graphs/neuropeptide_genes.png']
 colors= ['#984ea3','#4daf4a', '#377eb8',
@@ -395,95 +369,100 @@ axonAG[['ens_gene', 'b']].to_csv('../output/axonogenesisAgingCrossGenotype.csv',
 # Identify candidates for RNAi
 # Good targets: small qval, large positive b vals, not previously described
 #==============================================================================
-#aging 
-dfBetaA.sort_values('b', inplace= True)
-ind= (~dfBetaA[dfBetaA.qval < qval].ens_gene.isin(dfGoldStandard.gene)) & \
-     (~dfBetaA[dfBetaA.qval < qval].ens_gene.isin(dfLifespanGenes.gene))
-     
-  
-dfBetaA[dfBetaA.qval < qval][ind].tail(55).to_csv('../output/CandidatesAging.csv')
+def exclude(df, excluded_genes, col):
+    ind= (~df[col].isin(excluded_genes))
+    return df[ind]
 
+def find_molecular_targets(df, to_be_removed, cols='ens_gene', x= 'b', q= 0.1):
+    """
+    Given a dataframe df, return a new dataframe that:
+    Doesn't have WBIDs present in the exclude series
+    Has only genes that have q value < qval
+    """
+    df.sort_values(x, inplace= True)
+    sig= (df.qval < q) #take only sig genes
+        
+    if isinstance(to_be_removed, list):
+        temp= df[sig].copy() #remove all non-sig genes and make a temp copy
+        for i, excluded_gene_list in enumerate(to_be_removed):
+            temp= exclude(temp, excluded_gene_list, cols[i])
+            print(i, len(temp), cols[i])
+    else:
+        temp= exclude(df[sig], to_be_removed, cols).copy()
+    return temp
+
+path= '../output/RNAi Candidates/'                
+
+excluded1= pd.Series(dfLifespanGenes.gene.append(dfGoldStandard.gene).unique())
+x= dfBetaG[dfBetaG.qval<qval].target_id
+y= dfBetaAG[dfBetaAG.qval<qval].target_id
+excluded2= pd.Series(x.append(y).unique())
+excluded= [excluded1, excluded2]
+cols= ['ens_gene', 'target_id']
+
+aging_set= find_molecular_targets(dfBetaA, excluded, cols, q=qval)
+aging_set.to_csv('../output/AgingGeneSet.csv')
+aging_set.tail(55).to_csv(path +'CandidatesAge_HighInOld.csv')
+aging_set.head(55).to_csv(path +'CandidatesAge_LowInOld.csv')
+
+#enrichment on genes associated only with aging
+#UP IN AGE
+aname1='aging_up (genes assoc. with aging only)'; fname1= 'aging_up.csv'
+aname2='aging_down (genes assoc. with aging only)'; fname2= 'aging_down.csv'
+
+anames= [aname1, aname2]
+fnames= [fname1, fname2]
+
+def direction_specific_tissue_analysis(anames, fnames, df, Lind, genes='ens_gene'):
+    """
+    Given a single dataframe, perform a tissue analysis for genes
+    using the selection indices in Lind
+    """
+    if not isinstance(anames, list):
+        raise ValueError('anames must be a list!')
+    if not isinstance(fnames, list):
+        raise ValueError('fnames must be a list!')
+    if len(anames) != len(fnames):
+        raise ValueError('fnames and anames must match length')
+        
+    for i, aname in enumerate(anames):
+        fname= fnames[i]
+        ind= inds[i]
+        df_results= hgt.implement_hypergmt_enrichment_tool(aname, 
+        df[ind][genes], tissue_df, qvalEn)
+
+        #save results to csv file
+        df_results.to_csv('../output/EnrichmentAnalysisResults/'+fname, index= False)
+        #reopen the file and add a comment with relevant info for the file
+        line= '#' + aname+'\n'
+        rsq.line_prepender('../output/EnrichmentAnalysisResults/'+fname, line)
+        #plot top fold change tissues
+        hgt.plotting_and_formatting(df_results, ytitle= aname)
+
+inds= [(aging_set.b>0), (aging_set.b<0)]
+direction_specific_tissue_analysis(anames, fnames, aging_set, inds)
 
 #genotype 
 dfBetaG.sort_values('b', inplace= True)
+#select genes not in goldstandard or in lifespan that are significant
 ind= (~dfBetaG[dfBetaG.qval < qval].ens_gene.isin(dfGoldStandard.gene)) & \
      (~dfBetaG[dfBetaG.qval < qval].ens_gene.isin(dfLifespanGenes.gene))
+#select genes that have stat. insig. beta in genotype (i.e., don't care about)
+ind2= (~dfBetaG.target_id.isin(dfBetaA[dfBetaA.qval > qval].target_id))     
+ind3=  (~dfBetaG.target_id.isin(dfBetaAG[dfBetaAG.qval > qval].target_id))
+
+path= '../output/RNAi Candidates/'
+dfBetaG[dfBetaG.qval < qval][ind & ind2 & ind3].tail(55).to_csv(path +'CandidatesGenotype_HighInFog.csv')
+dfBetaG[dfBetaG.qval < qval][ind & ind2 & ind3].head(55).to_csv(path +'CandidatesGenotype_HighInN2.csv')
      
-  
-dfBetaG[dfBetaG.qval < qval][ind].tail(25).to_csv('../output/CandidatesGenotype.csv')
      
 #interactions    
+#more than linear increase in age, up in fog2 more than wt
+#only take genes that go way up during age
 dfBetaAG.sort_values('b', inplace= True)
-ind= (~dfBetaAG[dfBetaAG.qval < qval].ens_gene.isin(dfGoldStandard.gene)) & \
-     (~dfBetaAG[dfBetaAG.qval < qval].ens_gene.isin(dfLifespanGenes.gene)) &\
-     (dfBetaA.ix[dfBetaAG[dfBetaAG.qval < qval].index].b > dfBetaA.b.quantile(.75))
-     
-  
-dfBetaAG[dfBetaAG.qval < qval][ind].tail(55).to_csv('../output/CandidatesAgingXGenotype.csv')
-
-#==============================================================================
-# Analysis of discordant betas -- i.e., which genes have interaction effects
-# That are suggestive of lifespan importance
-#==============================================================================
-#remove from each dataframe all the genes that aren't in all others
-dfBetaA= dfBetaA[dfBetaA.target_id.isin(dfBetaG.target_id)]
-dfBetaA= dfBetaA[dfBetaA.target_id.isin(dfBetaAG.target_id)]
-dfBetaG= dfBetaG[dfBetaG.target_id.isin(dfBetaA.target_id)]
-dfBetaG= dfBetaG[dfBetaG.target_id.isin(dfBetaAG.target_id)]
-dfBetaAG= dfBetaAG[dfBetaAG.target_id.isin(dfBetaG.target_id)]
-dfBetaAG= dfBetaAG[dfBetaAG.target_id.isin(dfBetaA.target_id)]
-
-dfBetaA.set_index('target_id', inplace= True)
-dfBetaG.set_index('target_id', inplace= True)
-dfBetaAG.set_index('target_id', inplace= True)
-
-ind= (dfBetaA.qval < qval) & (dfBetaG.qval < qval) & (dfBetaAG.qval < qval)
-
-plt.plot(dfBetaA.b, dfBetaG.b, 'o', alpha= .3)
-plt.plot(np.absolute(dfBetaA[ind].b+dfBetaG[ind].b), np.absolute(dfBetaAG[ind].b), 'o', alpha= .3)
-#plt.plot(dfBetaA[ind].b, dfBetaAG[ind].b, 'o', alpha= .3)
-plt.xlim(-12, 12)
-plt.ylim(-12, 12)
-plt.plot(dfBetaA[ind].b, dfBetaA[ind].b*dfBetaG[ind].b, 'o', alpha= .3)
-
-
-ind1= (dfBetaA[ind].b < 0) & (dfBetaG[ind].b <0)
-ind2= (dfBetaA[ind].b > 0) & (dfBetaG[ind].b >0)
-ind3= dfBetaAG[ind].b > 0
-
-ind4= (ind1 & ind3)
-dfBetaA[ind][ind4].ens_gene.to_csv('../output/discordant_betas_age::genotype_less_0.csv', index=False)
-
-
-listform= dfBetaA[ind][ind4].ens_gene.unique()
-df_analysis= \
-    hgt.implement_hypergmt_enrichment_tool('aging::genotype less than 0, discordant', listform,\
-                                    tissue_df, qvalEn)
-#save results to csv file
-df_analysis.to_csv('../output/EnrichmentAnalysisResults/aging::genotype less than 0, discordant_Enrich', index= False)
-#reopen the file and add a comment with relevant info for the file
-#aname= agingANDgenotype_sig_Enrich
-#line= '#' + aname+'\n'
-#rsq.line_prepender('../output/EnrichmentAnalysisResults/'+fname, line)
-#
-#plot top fold change tissues
-hgt.plotting_and_formatting(df_analysis, ytitle= 'aging::genotype less than 0, discordant Enrich')
-
-
-
-
-
-tissues= ['neuron', 'muscle']
-df_exp= rsq.organize(tissues, tissue_df)
-
-colors2= ['#ffff33','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-rsq.kegg(qval, dfBetaA[ind], df_exp, colors2, title= 'Aging',\
-        xlab= r'$\beta_{\mathrm{Aging}}$', ylab= 'Density')
-rsq.kegg(qval, dfBetaG[ind], df_exp, colors2, title= 'Genotype',\
-        xlab= r'$\beta_{\mathrm{Genotype}}$', ylab= 'Density')
-rsq.kegg(qval, dfBetaAG[ind], df_exp, colors2, title= 'Aging::Genotype',\
-        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', ylab= 'Density')
-             
+ind= (dfBetaA.ix[dfBetaAG[dfBetaAG.qval < qval].index].b > dfBetaA.b.quantile(.9))
+dfBetaAG[dfBetaAG.qval < qval][ind].tail(55).to_csv('../output/CandidatesAgingXGenotypeMoreThanExp.csv')
+dfBetaAG[dfBetaAG.qval < qval][ind].head(55).to_csv('../output/CandidatesAgingXGenotypeLessThanExp.csv')
 
 
 

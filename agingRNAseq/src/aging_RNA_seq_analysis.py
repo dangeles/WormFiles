@@ -35,16 +35,24 @@ if not os.path.exists(dirLists):
 dirGraphs= '../output/Graphs'
 if not os.path.exists(dirLists):
     os.makedirs(dirGraphs)
-    
 
 os.chdir('./')
 #gene_lists from sleuth
+#tpm vals for PCA
+dfTPM= pd.read_csv("../input/tpm_table.csv")
+dfTPM.dropna(inplace= True)
 #pos beta means high old adults
 dfBetaA= pd.read_csv("../input/agebeta_wt.csv")
+dfBetaA.dropna(inplace= True)
 #pos beta means high in fog2
 dfBetaG= pd.read_csv("../input/genotypebeta_wt.csv")
+dfBetaG.dropna(inplace= True)
 #pos beta means high in fog2-aged
 dfBetaAG= pd.read_csv("../input/genotypecrossagebeta_wt.csv")
+dfBetaAG.dropna(inplace= True)
+#likelihood ratio test results
+dfLRT= pd.read_csv("../input/lrt.csv")
+dfLRT.dropna(inplace= True)
 
 #sort by target_id
 dfBetaA.sort_values('target_id', inplace= True)
@@ -94,122 +102,9 @@ dfLifespanGenes= pd.read_csv('../input/lifespan gene list complete.csv')
 #if using the enrichment tool 
 tissue_df= pd.read_csv("../input/dictionary.csv")
 
-#slice all the relevant gene names out
-#remove all isoforms!
 
-g= lambda x: (x.qval < qval) & (x.b > mag)
-namesBetaA= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesBetaG= dfBetaG[g(dfBetaG)].ens_gene.unique()
-namesBetaAG= dfBetaAG[g(dfBetaAG)].ens_gene.unique()
 
-g= lambda x: (x.qval < qval) & (x.b < -mag)
-namesBetaAneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesBetaGneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesBetaAGneg= dfBetaA[g(dfBetaA)].ens_gene.unique()
-    
-g= lambda x: (x.qval < qval) & (x.b > 0)
-namesA0= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesG0= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesAG0= dfBetaA[g(dfBetaA)].ens_gene.unique()
-        
-g= lambda x: (x.qval < qval) & (x.b < 0)
-namesA0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesG0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
-namesAG0neg= dfBetaA[g(dfBetaA)].ens_gene.unique()
 
-#place all the relevant gene lists in this array
-array_of_arrays= [namesBetaA,
-                  namesBetaG,
-                  namesBetaAG,
-                  namesBetaAneg,
-                  namesBetaGneg,
-                  namesBetaAGneg,
-                  namesA0,
-                  namesG0,
-                  namesAG0,
-                  namesA0neg,
-                  namesG0neg,
-                  namesAG0neg]    
-#==============================================================================
-# Tissue Enrichment Batch Analysis
-#==============================================================================
-aname0= 'Age Beta> {0}'.format(mag)
-aname1= 'Genotype Beta> {0}'.format(mag)
-aname2= 'Age::Genotype Beta> {0}'.format(mag)
-
-aname3= 'Age Beta< -{0}'.format(mag)
-aname4= 'Genotype Beta< -{0}'.format(mag)
-aname5= 'Age::Genotype Beta< -{0}'.format(mag)
-
-aname6= 'Age Beta> 0'
-aname7= 'Genotype Beta> 0'
-aname8= 'Age::Genotype Beta> 0'
-
-aname9= 'Age Beta< 0'
-aname10= 'Genotype Beta< 0'
-aname11= 'Age::Genotype Beta< 0'
-array_of_anames= [aname0,aname1,aname2,
-                  aname3,aname4,aname5,
-                  aname6,aname7,aname8,
-                  aname9,aname10,aname11]
-
-fname0= 'EnrichmentAnalysisAge_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname1= 'EnrichmentAnalysisGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname2= 'EnrichmentAnalysisAgeCrossGenotype_BetaGreaterThan{0}_qval_{1}.csv'.format(mag, qvalEn)
-
-fname3= 'EnrichmentAnalysisAgePositive_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname4= 'EnrichmentAnalysisGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-fname5= 'EnrichmentAnalysisAgeCrossGenotype_BetaLessThanNegative{0}_qval_{1}.csv'.format(mag, qvalEn)
-
-fname6= 'EnrichmentAnalysisAge_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-fname7= 'EnrichmentAnalysisGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-fname8= 'EnrichmentAnalysisAgeCrossGenotype_AllPosBeta_qval_{0}.csv'.format(qvalEn)
-
-fname9= 'EnrichmentAnalysisAge_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-fname10= 'EnrichmentAnalysisGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-fname11= 'EnrichmentAnalysisAgeCrossGenotype_AllNegBeta_qval_{0}.csv'.format(qvalEn)
-array_of_fnames= [fname0, fname1, fname2,
-                  fname3, fname4, fname5, 
-                  fname6, fname7, fname8, 
-                  fname9, fname10, fname11]               
-array_of_strings= ['namesBetaA', 'namesBetaG', 'namesBetaAG',
-                'namesBetaAneg', 'namesBetaGneg', 'namesBetaAGneg',
-                'namesA0', 'namesG0', 'namesAG0',
-                'namesA0neg', 'namesG0neg', 'namesAG0neg'
-                ]
-#run the enrichment analysis  for each dataset
-for i, list_of_genes in enumerate(array_of_arrays):
-    #run the tissue enrichment tool 
-    aname= array_of_anames[i] #name of the analysis
-    fname= array_of_fnames[i] #filename to store as
-    
-    #print analysis name so you know what's gong on
-    print(aname)
-    print(len(list_of_genes))    
-    df_analysis= \
-    hgt.implement_hypergmt_enrichment_tool(aname, list_of_genes,\
-                                    tissue_df, qvalEn, f_unused= fname)
-    #save results to csv file
-    df_analysis.to_csv('../output/EnrichmentAnalysisResults/'+fname, index= False)
-    #reopen the file and add a comment with relevant info for the file
-    line= '#' + aname+'\n'
-    rsq.line_prepender('../output/EnrichmentAnalysisResults/'+fname, line)
-    
-    #plot top fold change tissues
-    hgt.plotting_and_formatting(df_analysis, ytitle= aname)
-    #close
-#    plt.close()
-    
-#    #save genes with betas significantly different from zero in a list format
-#    k= array_of_strings[i][5:]
-#            
-#    filename= dirLists+'/'+ 'gene_list_{0}_beta{1}_q{2}.csv'.format(k, mag, qvalEn)
-#    #print('filename', filename)
-#    with open(filename, 'w') as f:
-#        for gene in list_of_genes:
-#            f.write(gene)
-#            f.write('\n')
-#    f.close()
 #==============================================================================
 #==============================================================================
 # KDE for select tissues
@@ -226,13 +121,16 @@ df_exp= rsq.organize(tissues, tissue_df)
 
 
 colors2= ['#ffff33','#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-rsq.kegg(qval, dfBetaA, df_exp, colors2, title= 'Aging', \
+genes= 'ens_gene'
+x= 'b'
+y= 'qval'
+rsq.tissue_kegg(qval,genes, x, y,  dfBetaA, df_exp, colors2, title= 'Aging', \
         savename= '../output/Graphs/aging_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Aging}}$', ylab= 'Density')
-rsq.kegg(qval, dfBetaG, df_exp, colors2, title= 'Genotype', \
+rsq.tissue_kegg(qval, genes, x, y,dfBetaG, df_exp, colors2, title= 'Genotype', \
         savename= '../output/Graphs/genotype_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Genotype}}$', ylab= 'Density')
-rsq.kegg(qval, dfBetaAG, df_exp, colors2, title= 'Aging::Genotype', \
+rsq.tissue_kegg(qval, genes, x, y, dfBetaAG, df_exp, colors2, title= 'Aging::Genotype', \
         savename= '../output/Graphs/agingxgenotype_tissue_specific_kde.png',\
         xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', ylab= 'Density')
 #==============================================================================
@@ -242,47 +140,65 @@ rsq.kegg(qval, dfBetaAG, df_exp, colors2, title= 'Aging::Genotype', \
 colors= ['#999999','#ffff33','#f781bf','#ff7f00','#984ea3','#4daf4a', '#377eb8',
          '#e41a1c', '#a65628']
 
-rsq.explode_goldstandards(qval, dfBetaA, dfGoldStandard, colors= colors, title= 'Aging', \
-        savename= '../output/Graphs/aging_with_goldstandards_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-rsq.explode_goldstandards(qval, dfBetaG, dfGoldStandard, colors= colors, title= 'Genotype', \
-        savename= '../output/Graphs/genotype_with_goldstandards_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-rsq.explode_goldstandards(qval, dfBetaAG, dfGoldStandard, colors= colors, title= 'Aging::Genotype', \
-        savename= '../output/Graphs/agingcrossgenotype_with_goldstandards_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-
+rsq.explode_cool_genes(qval,'b','qval','origin','gene', dfBetaA, dfGoldStandard,
+    colors= colors, title= 'Aging', 
+    savename= '../output/Graphs/aging_with_goldstandards_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,'b','qval','origin','gene', dfBetaG, dfGoldStandard,
+    colors= colors, title= 'Genotype', 
+    savename= '../output/Graphs/genotype_with_goldstandards_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,'b','qval','origin','gene', dfBetaAG, dfGoldStandard,
+    colors= colors, title= 'Aging::Genotype', 
+    savename= '../output/Graphs/agingcrossgenotype_with_goldstandards_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
 #==============================================================================
 # Volcano plots for target genes
 #==============================================================================
 colors= ['#999999','#ffff33','#f781bf','#ff7f00','#984ea3','#4daf4a', '#377eb8',
          '#e41a1c', '#a65628']
-rsq.explode_goldstandards(qval, dfBetaA, dfTargets, colors= colors, title= 'Aging', \
-        savename= '../output/Graphs/aging_with_targets_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-rsq.explode_goldstandards(qval, dfBetaG, dfTargets, colors= colors, title= 'Genotype', \
-        savename= '../output/Graphs/genotype_with_targets_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-rsq.explode_goldstandards(qval, dfBetaAG, dfTargets, colors= colors, title= 'Aging::Genotype', \
-        savename= '../output/Graphs/agingcrossgenotype_with_targets_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-
-
-dfLifespanGenes.columns= ['gene', 'origin']
-rsq.explode_goldstandards(qval, dfBetaA, dfLifespanGenes, colors= colors, title= 'Aging', \
-        savename= '../output/Graphs/aging_lifespan_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-
-rsq.explode_goldstandards(qval, dfBetaG, dfLifespanGenes, colors= colors, title= 'Genotype', \
-        savename= '../output/Graphs/genotype_lifespan_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
-
-rsq.explode_goldstandards(qval, dfBetaAG, dfLifespanGenes, colors= colors, title= 'Aging::Genotype', \
-        savename= '../output/Graphs/agingcrossgenotype_lifespan_volcplot.png',\
-        xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+x='b'
+y='qval'
+targ_x= 'effect'
+targ_y= 'gene'
+rsq.explode_cool_genes(qval,x, y,targ_x,targ_y, dfBetaA, dfTargets,
+    colors= colors, title= 'Aging', 
+    savename= '../output/Graphs/aging_targets_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,x, y, targ_x, targ_y, dfBetaG, dfTargets,
+    colors= colors, title= 'Genotype', 
+    savename= '../output/Graphs/genotype_targets_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,x, y,targ_x, targ_y, dfBetaAG, dfTargets,
+    colors= colors, title= 'Aging::Genotype', 
+    savename= '../output/Graphs/agingcrossgenotype_targets_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
 
 #==============================================================================
-# Count how many lifespan genes show up
+# Lifespan genes
+#==============================================================================
+colors= ['#999999','#ffff33','#e41a1c','#377eb8','#4daf4a','#984ea3']
+x='b'
+y='qval'
+targ_x= 'effect'
+targ_y= 'gene'
+rsq.explode_cool_genes(qval,x, y,targ_x,targ_y, dfBetaA, dfTargets,
+    colors= colors, title= 'Aging', 
+    savename= '../output/Graphs/aging_lifespan_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,x, y, targ_x, targ_y, dfBetaG, dfTargets,
+    colors= colors, title= 'Genotype', 
+    savename= '../output/Graphs/genotype_lifespan_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+rsq.explode_cool_genes(qval,x, y,targ_x, targ_y, dfBetaAG, dfTargets,
+    colors= colors, title= 'Aging::Genotype', 
+    savename= '../output/Graphs/agingcrossgenotype_lifespan_volcplot.png',
+    xlab= r'$\beta_{\mathrm{Aging::Genotype}}$', xlim= [-12,12], ylim= [10**-4, 10**2])
+
+#==============================================================================
+#==============================================================================
+# # Count how many lifespan genes show up
+#==============================================================================
 #==============================================================================
 #figure out how many genes in dfLIfespan show up in this analysis
 f= lambda x: (dfBetaA.ens_gene.isin(x)) & (dfBetaA.qval < qval)    
@@ -305,7 +221,11 @@ with open('../output/lifespan_genes_that_show_up.csv', 'w') as f:
         f.write('\n')
     f.close()
 
-
+#==============================================================================
+#==============================================================================
+# # 
+#==============================================================================
+#==============================================================================
 Ldf= [dfBetaA, dfBetaG, dfBetaAG] #list of dataframes
 dfnames= ['Age', 'Genotype', 'Age::Genotype']
 colors= ['#377eb8','#e41a1c','#4daf4a']
@@ -314,7 +234,6 @@ fnames= ['../output/Graphs/positive_aging.png','../output/Graphs/negative_aging.
 #==============================================================================
 # KDE for Lifespan Genes from Wormbase
 #==============================================================================
-
 rsq.kegg_compareall_byval(qval, Ldf, dfLifespanGenes, colors, savenames= fnames,
                    dfnames= dfnames, xscale= 'symlog', ylab= 'Density', save= True)
                    
@@ -344,24 +263,26 @@ axonA= dfBetaA[f(dfBetaA, 'axonogenesis genes')]
 axonG= dfBetaG[f(dfBetaG, 'axonogenesis genes')]
 axonAG= dfBetaAG[f(dfBetaAG, 'axonogenesis genes')]
 
-gpcrsA[['ens_gene', 'b']].to_csv('../output/gpcrsAging.csv', header= ['GPCRS in Aging', 'reg. value'])
-gpcrsG[['ens_gene', 'b']].to_csv('../output/gpcrsGenotype.csv', header= ['GPCRS in Genotype', 'reg. value'])
-gpcrsAG[['ens_gene', 'b']].to_csv('../output/gpcrsAgingCrossGenotype.csv', 
-                        header= ['GPCRS in Aging::Genotype', 'reg. value'])
-
-ionA[['ens_gene', 'b']].to_csv('../output/ion_transport_genesAging.csv', 
-                     header= ['ion transport genes in Aging', 'reg. value'])
-ionG[['ens_gene', 'b']].to_csv('../output/ion_transport_genesGenotype.csv', 
-                     header= ['ion transport genes in Genotype', 'reg. value'])
-ionAG[['ens_gene', 'b']].to_csv('../output/ion_transport_genesAgingCrossGenotype.csv', 
-                      header= ['ion transport genes in Aging::Genotype', 'reg. value'])
-
-axonA[['ens_gene', 'b']].to_csv('../output/axonogenesisAging.csv', 
-                      header= ['axonogenesis genes in Aging', 'reg. value'])
-axonG[['ens_gene', 'b']].to_csv('../output/axonogenesisGenotype.csv', 
-                      header= ['axonogenesis genes in Genotype', 'reg. value'])
-axonAG[['ens_gene', 'b']].to_csv('../output/axonogenesisAgingCrossGenotype.csv', 
-                       header= ['axonogenesis genes in Aging::Genotype', 'reg. value'])
+#gpcrsA[['ens_gene', 'b']].to_csv('../output/gpcrsAging.csv', header= 
+#['GPCRS in Aging', 'reg. value'])
+#gpcrsG[['ens_gene', 'b']].to_csv('../output/gpcrsGenotype.csv', header= 
+#['GPCRS in Genotype', 'reg. value'])
+#gpcrsAG[['ens_gene', 'b']].to_csv('../output/gpcrsAgingCrossGenotype.csv', 
+#                        header= ['GPCRS in Aging::Genotype', 'reg. value'])
+#
+#ionA[['ens_gene', 'b']].to_csv('../output/ion_transport_genesAging.csv', 
+#                     header= ['ion transport genes in Aging', 'reg. value'])
+#ionG[['ens_gene', 'b']].to_csv('../output/ion_transport_genesGenotype.csv', 
+#                     header= ['ion transport genes in Genotype', 'reg. value'])
+#ionAG[['ens_gene', 'b']].to_csv('../output/ion_transport_genesAgingCrossGenotype.csv', 
+#                      header= ['ion transport genes in Aging::Genotype', 'reg. value'])
+#
+#axonA[['ens_gene', 'b']].to_csv('../output/axonogenesisAging.csv', 
+#                      header= ['axonogenesis genes in Aging', 'reg. value'])
+#axonG[['ens_gene', 'b']].to_csv('../output/axonogenesisGenotype.csv', 
+#                      header= ['axonogenesis genes in Genotype', 'reg. value'])
+#axonAG[['ens_gene', 'b']].to_csv('../output/axonogenesisAgingCrossGenotype.csv', 
+#                       header= ['axonogenesis genes in Aging::Genotype', 'reg. value'])
 
 
 
@@ -379,39 +300,17 @@ def find_molecular_targets(df, to_be_removed, cols='ens_gene', x= 'b', q= 0.1):
     Doesn't have WBIDs present in the exclude series
     Has only genes that have q value < qval
     """
+    if cols in [str, int, float]:
+        cols= [cols]
+    
     df.sort_values(x, inplace= True)
     sig= (df.qval < q) #take only sig genes
-        
+    
+    temp= df[sig].copy() #remove all non-sig genes and make a temp copy
     if isinstance(to_be_removed, list):
-        temp= df[sig].copy() #remove all non-sig genes and make a temp copy
         for i, excluded_gene_list in enumerate(to_be_removed):
             temp= exclude(temp, excluded_gene_list, cols[i])
-            print(i, len(temp), cols[i])
-    else:
-        temp= exclude(df[sig], to_be_removed, cols).copy()
     return temp
-
-path= '../output/RNAi Candidates/'                
-
-excluded1= pd.Series(dfLifespanGenes.gene.append(dfGoldStandard.gene).unique())
-x= dfBetaG[dfBetaG.qval<qval].target_id
-y= dfBetaAG[dfBetaAG.qval<qval].target_id
-excluded2= pd.Series(x.append(y).unique())
-excluded= [excluded1, excluded2]
-cols= ['ens_gene', 'target_id']
-
-aging_set= find_molecular_targets(dfBetaA, excluded, cols, q=qval)
-aging_set.to_csv('../output/AgingGeneSet.csv')
-aging_set.tail(55).to_csv(path +'CandidatesAge_HighInOld.csv')
-aging_set.head(55).to_csv(path +'CandidatesAge_LowInOld.csv')
-
-#enrichment on genes associated only with aging
-#UP IN AGE
-aname1='aging_up (genes assoc. with aging only)'; fname1= 'aging_up.csv'
-aname2='aging_down (genes assoc. with aging only)'; fname2= 'aging_down.csv'
-
-anames= [aname1, aname2]
-fnames= [fname1, fname2]
 
 def direction_specific_tissue_analysis(anames, fnames, df, Lind, genes='ens_gene'):
     """
@@ -438,35 +337,139 @@ def direction_specific_tissue_analysis(anames, fnames, df, Lind, genes='ens_gene
         rsq.line_prepender('../output/EnrichmentAnalysisResults/'+fname, line)
         #plot top fold change tissues
         hgt.plotting_and_formatting(df_results, ytitle= aname)
+ 
 
+
+#set the path to sve the rnai candidates
+#and make sure to exclude known genes from analysis
+path= '../output/RNAi Candidates/'                
+excluded1= pd.Series(dfLifespanGenes.gene.append(dfGoldStandard.gene).unique())
+#==============================================================================
+# 
+#==============================================================================
+#also exclude genes that have significant betas in any other list
+x= dfBetaG[dfBetaG.qval<qval].target_id
+y= dfBetaAG[dfBetaAG.qval<qval].target_id
+excluded2= pd.Series(x.append(y).unique())
+excluded= [excluded1, excluded2]
+cols= ['ens_gene', 'target_id']
+
+aging_set= find_molecular_targets(dfBetaA, excluded, cols, q=qval)
+aging_set.to_csv('../output/AgingGeneSet.csv')
+aging_set.tail(55).to_csv(path +'CandidatesAge_HighInOld.csv')
+aging_set.head(55).to_csv(path +'CandidatesAge_LowInOld.csv')
+
+#enrichment on genes associated only with aging
+aging_set= find_molecular_targets(dfBetaA, excluded, cols, q=qval)
+aname1='aging_up (genes assoc. with aging only)'; fname1= 'aging_up.csv'
+aname2='aging_down (genes assoc. with aging only)'; fname2= 'aging_down.csv'
+anames= [aname1, aname2]
+fnames= [fname1, fname2]
 inds= [(aging_set.b>0), (aging_set.b<0)]
 direction_specific_tissue_analysis(anames, fnames, aging_set, inds)
+#==============================================================================
+# 
+#==============================================================================
+#now for genotype, same thing
+x= dfBetaA[dfBetaA.qval<qval].target_id
+y= dfBetaAG[dfBetaAG.qval<qval].target_id
+excluded2= pd.Series(x.append(y).unique())
+excluded= [excluded1, excluded2]
+genotype_set= find_molecular_targets(dfBetaG, excluded, cols, q=qval)
+genotype_set.to_csv('../output/GenotypeGeneSet.csv')
+genotype_set.tail(55).to_csv(path +'CandidatesGenotype_HighInOld.csv')
+genotype_set.head(55).to_csv(path +'CandidatesGenotype_LowInOld.csv') 
 
-#genotype 
-dfBetaG.sort_values('b', inplace= True)
-#select genes not in goldstandard or in lifespan that are significant
-ind= (~dfBetaG[dfBetaG.qval < qval].ens_gene.isin(dfGoldStandard.gene)) & \
-     (~dfBetaG[dfBetaG.qval < qval].ens_gene.isin(dfLifespanGenes.gene))
-#select genes that have stat. insig. beta in genotype (i.e., don't care about)
-ind2= (~dfBetaG.target_id.isin(dfBetaA[dfBetaA.qval > qval].target_id))     
-ind3=  (~dfBetaG.target_id.isin(dfBetaAG[dfBetaAG.qval > qval].target_id))
 
-path= '../output/RNAi Candidates/'
-dfBetaG[dfBetaG.qval < qval][ind & ind2 & ind3].tail(55).to_csv(path +'CandidatesGenotype_HighInFog.csv')
-dfBetaG[dfBetaG.qval < qval][ind & ind2 & ind3].head(55).to_csv(path +'CandidatesGenotype_HighInN2.csv')
-     
-     
+genotype_set= find_molecular_targets(dfBetaG, excluded2, cols, q=qval)
+aname1='genotype up (genes assoc. with genotype only)'; fname1= 'genotype up.csv'
+aname2='genotype down (genes assoc. with genotype only)'; fname2= 'genotype down.csv'
+anames= [aname1, aname2]
+fnames= [fname1, fname2]
+inds= [(genotype_set.b>0), (genotype_set.b<0)]
+direction_specific_tissue_analysis(anames, fnames, genotype_set, inds)
+  
 #interactions    
 #more than linear increase in age, up in fog2 more than wt
 #only take genes that go way up during age
-dfBetaAG.sort_values('b', inplace= True)
+interaction_set= find_molecular_targets(dfBetaG, excluded, cols, q=qval)
 ind= (dfBetaA.ix[dfBetaAG[dfBetaAG.qval < qval].index].b > dfBetaA.b.quantile(.9))
-dfBetaAG[dfBetaAG.qval < qval][ind].tail(55).to_csv('../output/CandidatesAgingXGenotypeMoreThanExp.csv')
-dfBetaAG[dfBetaAG.qval < qval][ind].head(55).to_csv('../output/CandidatesAgingXGenotypeLessThanExp.csv')
+ind2= (dfBetaAG.target_id.isin(dfLRT[dfLRT.qval < qval].target_id))
+dfBetaAG[dfBetaAG.qval < qval][ind & ind2].tail(55).to_csv(
+'../output/RNAi Candidates/CandidatesAgingXGenotypeMoreThanExp.csv')
+dfBetaAG[dfBetaAG.qval < qval][ind & ind2].head(55).to_csv(
+'../output/RNAi Candidates/CandidatesAgingXGenotypeLessThanExp.csv')
+aname1='genotypeXaging up (genes assoc. with genotype only)'; fname1= 'agingCrossgenotype up.csv'
+aname2='genotypeXaging down (genes assoc. with genotype only)'; fname2= 'agingCrossgenotype down.csv'
+anames= [aname1, aname2]
+fnames= [fname1, fname2]
+inds= [(dfBetaAG[(dfBetaAG.qval < qval) & ind2].b>0),
+        (dfBetaAG[(dfBetaAG.qval < qval) & ind2].b<0)]
+direction_specific_tissue_analysis(anames, fnames, dfBetaAG[(dfBetaAG.qval < qval) & ind2], inds)
+  
 
 
 
 
+
+
+s1= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[0]].tpm.values
+s2= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[1]].tpm.values
+s3= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[2]].tpm.values
+s4= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[3]].tpm.values
+s5= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[4]].tpm.values
+s6= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[5]].tpm.values
+s7= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[6]].tpm.values
+s8= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[7]].tpm.values
+s9= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[8]].tpm.values
+s10= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[9]].tpm.values
+s11= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[10]].tpm.values
+s12= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[11]].tpm.values
+
+
+
+
+mat= np.matrix([s1, s2, s3,
+           s4, s5, s6,
+           s7, s8, s9,
+           s10, s11, s12]).transpose()
+sklearn_pca = sklearn.decomposition.PCA(n_components=3)
+sklearn_pca.fit(mat)
+x, y, z= sklearn_pca.components_
+# Project the data into this 2D space and convert it back to a tidy dataframe
+
+colors= ['#1b9e77','#d95f02','#7570b3']
+fig = plt.figure(1, figsize=(8, 6))
+ax = mpl_toolkits.mplot3d.Axes3D(fig)
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    ax.plot(x[i], y[i], z[i], 'o', col= colors[j])
+ax.plot(x, y, z, 'o')
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.set_zlabel("PC 3")
+ax.legend(loc='upper left', fontsize=15)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#==============================================================================
+#==============================================================================
+# # Regression examples
+#==============================================================================
+#==============================================================================
 #Make figures to show what regressions look like.....
 def example(B, x, y):
     """ 

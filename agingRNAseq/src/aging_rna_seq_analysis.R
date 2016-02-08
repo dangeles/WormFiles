@@ -44,13 +44,13 @@ so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
 #Wald test implementations
 #no interactions
 so <- sleuth_wt(so, which_beta = '(Intercept)', which_model = 'full')
-so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'full')
-so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'full')
+so <- sleuth_wt(so, which_beta = 'ageold', which_model = 'full')
+so <- sleuth_wt(so, which_beta = 'genotypemt', which_model = 'full')
 #model with interaction
 so <- sleuth_wt(so, which_beta = '(Intercept)', which_model= 'interaction')
-so <- sleuth_wt(so, which_beta = 'ageyoung', which_model = 'interaction')
-so <- sleuth_wt(so, which_beta = 'genotypeN2', which_model = 'interaction')
-so <- sleuth_wt(so, which_beta = 'genotypeN2:ageyoung', which_model = 'interaction')
+so <- sleuth_wt(so, which_beta = 'ageold', which_model = 'interaction')
+so <- sleuth_wt(so, which_beta = 'genotypemt', which_model = 'interaction')
+so <- sleuth_wt(so, which_beta = 'genotypemt:ageold', which_model = 'interaction')
 #likelihood test
 so <- sleuth_lrt(so, 'full', 'interaction')
 
@@ -58,13 +58,13 @@ so <- sleuth_lrt(so, 'full', 'interaction')
 sleuth_live(so)
 
 #write results to tables
-results_table <- sleuth_results(so, 'ageyoung','interaction', test_type= 'wt')
+results_table <- sleuth_results(so, 'ageold','interaction', test_type= 'wt')
 write.csv(results_table, "~/WormFiles/agingRNAseq/input/agebeta_wt.csv")
 
-results_table <- sleuth_results(so, 'genotypeN2','interaction', test_type= 'wt')
+results_table <- sleuth_results(so, 'genotypemt','interaction', test_type= 'wt')
 write.csv(results_table, "~/WormFiles/agingRNAseq/input/genotypebeta_wt.csv")
 
-results_table <- sleuth_results(so, 'genotypeN2:ageyoung','interaction', test_type= 'wt')
+results_table <- sleuth_results(so, 'genotypemt:ageold','interaction', test_type= 'wt')
 write.csv(results_table, "~/WormFiles/agingRNAseq/input/genotypecrossagebeta_wt.csv")
 
 results_table <- sleuth_results(so, '(Intercept)','interaction', test_type= 'wt')

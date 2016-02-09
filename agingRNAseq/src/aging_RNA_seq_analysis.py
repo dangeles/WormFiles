@@ -58,7 +58,7 @@ dfLRT.dropna(inplace= True)
 dfBetaA.sort_values('target_id', inplace= True)
 dfBetaG.sort_values('target_id', inplace= True)
 dfBetaAG.sort_values('target_id', inplace= True)
-
+dfLRT.sort_values('target_id', inplace= True)
 #gold standard datasets
 dfDaf12= pd.read_csv('../input/daf12genes.csv')
 dfDaf16= pd.read_csv('../input/daf16genes.csv')
@@ -360,7 +360,7 @@ aging_set.tail(55).to_csv(path +'CandidatesAge_HighInOld.csv')
 aging_set.head(55).to_csv(path +'CandidatesAge_LowInOld.csv')
 
 #enrichment on genes associated only with aging
-aging_set= find_molecular_targets(dfBetaA, excluded, cols, q=qval)
+aging_set= find_molecular_targets(dfBetaA, [excluded2], ['target_id'], q=qval)
 aname1='aging_up (genes assoc. with aging only)'; fname1= 'aging_up.csv'
 aname2='aging_down (genes assoc. with aging only)'; fname2= 'aging_down.csv'
 anames= [aname1, aname2]
@@ -381,7 +381,7 @@ genotype_set.tail(55).to_csv(path +'CandidatesGenotype_HighInOld.csv')
 genotype_set.head(55).to_csv(path +'CandidatesGenotype_LowInOld.csv') 
 
 
-genotype_set= find_molecular_targets(dfBetaG, excluded2, cols, q=qval)
+genotype_set= find_molecular_targets(dfBetaG, [excluded2], ['target_id'], q=qval)
 aname1='genotype up (genes assoc. with genotype only)'; fname1= 'genotype up.csv'
 aname2='genotype down (genes assoc. with genotype only)'; fname2= 'genotype down.csv'
 anames= [aname1, aname2]
@@ -392,13 +392,15 @@ direction_specific_tissue_analysis(anames, fnames, genotype_set, inds)
 #interactions    
 #more than linear increase in age, up in fog2 more than wt
 #only take genes that go way up during age
-interaction_set= find_molecular_targets(dfBetaG, excluded, cols, q=qval)
 ind= (dfBetaA.ix[dfBetaAG[dfBetaAG.qval < qval].index].b > dfBetaA.b.quantile(.9))
 ind2= (dfBetaAG.target_id.isin(dfLRT[dfLRT.qval < qval].target_id))
-dfBetaAG[dfBetaAG.qval < qval][ind & ind2].tail(55).to_csv(
+interaction_set= dfBetaAG[(dfBetaAG.qval < qval) & ind2]
+
+interaction_set.tail(55).to_csv(
 '../output/RNAi Candidates/CandidatesAgingXGenotypeMoreThanExp.csv')
 dfBetaAG[dfBetaAG.qval < qval][ind & ind2].head(55).to_csv(
 '../output/RNAi Candidates/CandidatesAgingXGenotypeLessThanExp.csv')
+
 aname1='genotypeXaging up (genes assoc. with genotype only)'; fname1= 'agingCrossgenotype up.csv'
 aname2='genotypeXaging down (genes assoc. with genotype only)'; fname2= 'agingCrossgenotype down.csv'
 anames= [aname1, aname2]
@@ -412,6 +414,19 @@ direction_specific_tissue_analysis(anames, fnames, dfBetaAG[(dfBetaAG.qval < qva
 
 
 
+
+s1= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[0]].est_counts.values
+s2= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[1]].est_counts.values
+s3= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[2]].est_counts.values
+s4= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[3]].est_counts.values
+s5= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[4]].est_counts.values
+s6= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[5]].est_counts.values
+s7= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[6]].est_counts.values
+s8= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[7]].est_counts.values
+s9= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[8]].est_counts.values
+s10= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[9]].est_counts.values
+s11= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[10]].est_counts.values
+s12= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[11]].est_counts.values
 
 s1= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[0]].tpm.values
 s2= dfTPM[dfTPM['sample'] == dfTPM['sample'].unique()[1]].tpm.values
@@ -438,19 +453,110 @@ sklearn_pca.fit(mat)
 x, y, z= sklearn_pca.components_
 # Project the data into this 2D space and convert it back to a tidy dataframe
 
-colors= ['#1b9e77','#d95f02','#7570b3']
+colors= ['#e41a1c','#377eb8','#4daf4a', '#984ea3']
+sample_label= ['mt a','mt a','mt a',
+          'mt y','mt y','mt y',
+          'wt a','wt a','wt a',
+          'wt y','wt y','wt y']
 fig = plt.figure(1, figsize=(8, 6))
 ax = mpl_toolkits.mplot3d.Axes3D(fig)
 for i in np.arange(0, 12):
     j= int(np.floor(float(i)/3))
-    ax.plot(x[i], y[i], z[i], 'o', col= colors[j])
-ax.plot(x, y, z, 'o')
+    print(i, j)
+    ax.plot([x[i],x[i]], [y[i],y[i]], [z[i],z[i]], 'o', color=colors[j], label= sample_label[i])
 
 ax.set_title("First three PC directions")
 ax.set_xlabel("PC 1")
 ax.set_ylabel("PC 2")
 ax.set_zlabel("PC 3")
 ax.legend(loc='upper left', fontsize=15)
+
+
+fig, ax= plt.subplots()
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    print(i, j)
+    ax.plot(x[i], y[i], 'o', color=colors[j], label= sample_label[i])
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.legend(loc='upper left', fontsize=15)
+
+#==============================================================================
+# ''normalized'' pca whatever that means...
+#==============================================================================
+from sklearn.preprocessing import StandardScaler
+
+mat= np.matrix([s1, s2, s3,
+           s4, s5, s6,
+           s7, s8, s9,
+           s10, s11, s12]).transpose()
+sklearn_pca = sklearn.decomposition.PCA(n_components=3)
+mat_std = StandardScaler().fit_transform(mat)
+sklearn_pca.fit_transform(mat_std)
+x, y, z= sklearn_pca.components_
+# Project the data into this 2D space and convert it back to a tidy dataframe
+
+colors= ['#e41a1c','#377eb8','#4daf4a', '#984ea3']
+sample_label= ['mt a','mt a','mt a',
+          'mt y','mt y','mt y',
+          'wt a','wt a','wt a',
+          'wt y','wt y','wt y']
+fig = plt.figure(1, figsize=(8, 6))
+ax = mpl_toolkits.mplot3d.Axes3D(fig)
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    print(i, j)
+    ax.plot([x[i],x[i]], [y[i],y[i]], [z[i],z[i]], 'o', color=colors[j], label= sample_label[i])
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.set_zlabel("PC 3")
+ax.legend(loc='upper left', fontsize=15)
+
+
+fig, ax= plt.subplots()
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    if float(i)%3 == 0:
+        ax.plot(x[i], y[i], 'o', color=colors[j], label= sample_label[i])
+    else:
+        ax.plot(x[i], y[i], 'o', color=colors[j])
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.legend(loc='upper left', fontsize=15)
+
+fig, ax= plt.subplots()
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    if float(i)%3 == 0:
+        ax.plot(x[i], z[i], 'o', color=colors[j], label= sample_label[i])
+    else:
+        ax.plot(x[i], z[i], 'o', color=colors[j])
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.legend(loc='upper left', fontsize=15)
+
+
+fig, ax= plt.subplots()
+for i in np.arange(0, 12):
+    j= int(np.floor(float(i)/3))
+    if float(i)%3 == 0:
+        ax.plot(z[i], y[i], 'o', color=colors[j], label= sample_label[i])
+    else:
+        ax.plot(z[i], y[i], 'o', color=colors[j])
+
+ax.set_title("First three PC directions")
+ax.set_xlabel("PC 1")
+ax.set_ylabel("PC 2")
+ax.legend(loc='upper left', fontsize=15)
+
 
 
 

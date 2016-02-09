@@ -1,7 +1,8 @@
-source("http://bioconductor.org/biocLite.R")
-biocLite("rhdf5")
-biocLite("biomaRt")
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("rhdf5")
+#biocLite("biomaRt")
 
+setwd('~/WormFiles/agingRNAseq/rdocs')
 #gene info for sleuth
 mart <- biomaRt::useMart(biomart = "ensembl", dataset = "celegans_gene_ensembl")
 t2g <- biomaRt::getBM(attributes = c("ensembl_transcript_id", "ensembl_gene_id",
@@ -10,15 +11,15 @@ t2g <- dplyr::rename(t2g, target_id = ensembl_transcript_id,
                      ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
 
 
-install.packages("devtools")
+#install.packages("devtools")
 
 #say no to binary files
-devtools::install_github("pachterlab/sleuth")
+#devtools::install_github("pachterlab/sleuth")
 
 library("sleuth")
 
 #point to your directory+
-base_dir <- "~/WormFiles/agingRNAseq/input/sleuth"
+base_dir <- "~/WormFiles/agingRNAseq/rdocs/sleuth"
 
 #get ids
 sample_id <- dir(file.path(base_dir, "results"))
@@ -43,11 +44,11 @@ so <- sleuth_fit(so,~ genotype + age, fit_name = 'full')
 
 #Wald test implementations
 #no interactions
-so <- sleuth_wt(so, which_beta = '(Intercept)', which_model = 'full')
+#so <- sleuth_wt(so, which_beta = '(Intercept)', which_model = 'full')
 so <- sleuth_wt(so, which_beta = 'ageold', which_model = 'full')
 so <- sleuth_wt(so, which_beta = 'genotypemt', which_model = 'full')
 #model with interaction
-so <- sleuth_wt(so, which_beta = '(Intercept)', which_model= 'interaction')
+#so <- sleuth_wt(so, which_beta = '(Intercept)', which_model= 'interaction')
 so <- sleuth_wt(so, which_beta = 'ageold', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypemt', which_model = 'interaction')
 so <- sleuth_wt(so, which_beta = 'genotypemt:ageold', which_model = 'interaction')
@@ -56,6 +57,10 @@ so <- sleuth_lrt(so, 'full', 'interaction')
 
 #if you want to look at shiny
 sleuth_live(so)
+
+
+#following line is to publish...
+#saveRDS(so, file = '~/shiny/sleuth/aging_fog2_AngelesAndLeighton_2016.rds')
 
 #write results to tables
 results_table <- sleuth_results(so, 'ageold','interaction', test_type= 'wt')

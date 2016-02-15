@@ -401,12 +401,19 @@ interaction_set.tail(55).to_csv(
 dfBetaAG[dfBetaAG.qval < qval][ind & ind2].head(55).to_csv(
 '../output/RNAi Candidates/CandidatesAgingXGenotypeLessThanExp.csv')
 
-aname1='genotypeXaging up (genes assoc. with genotype only)'; fname1= 'agingCrossgenotype up.csv'
-aname2='genotypeXaging down (genes assoc. with genotype only)'; fname2= 'agingCrossgenotype down.csv'
+aname1='genotypeXaging up (genes assoc. with a..g only)'; fname1= 'agingCrossgenotype up.csv'
+aname2='genotypeXaging down (genes assoc. with a..g only)'; fname2= 'agingCrossgenotype down.csv'
 anames= [aname1, aname2]
 fnames= [fname1, fname2]
+
+
 inds= [(dfBetaAG[(dfBetaAG.qval < qval) & ind2].b>0),
         (dfBetaAG[(dfBetaAG.qval < qval) & ind2].b<0)]
+
+sig= (dfBetaAG.qval < qval) 
+find_all_with_interaction_term= (dfBetaA.target_id.isin(dfBetaAG[sig & ind2].target_id))
+aging_with_interaction= dfBetaA[find_all_with_interaction_term].b
+
 direction_specific_tissue_analysis(anames, fnames, dfBetaAG[(dfBetaAG.qval < qval) & ind2], inds)
   
 

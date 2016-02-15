@@ -7,7 +7,7 @@ Spyder Editor
 dangeles@caltech.edu
 """
 
-import hypergeometricTests as hgt
+import hypergeometricTests as hgt #the library to be used
 import pandas as pd
 import os
 import importlib as imp
@@ -19,37 +19,54 @@ imp.reload(hgt)
 
 pd.set_option('display.float_format', lambda x:'%f'%x) 
 
+
+#this script generates a few directories. 
 dirOutput= '../output/'
 dirSummaries= '../output/SummaryInformation/'
 dirAnalyses= '../output/Analyses'
+dirHGT25= '../output/HGT25Results/'
+dirHGT50= '../output/HGT50Results/'
 
 #open the relevant file
 path_sets= '../input/genesets_golden/'
 path_dicts= '../input/WS252AnatomyDictionary/'
 
 
+#Make the dataframe to know how many tissues are being tested
 a= [10, 25, 50, 100]
 b= [None]*4
 tissue_numbers_df= pd.DataFrame(index= a, columns= ['No. of Tissues'])
 
 
-with open(dirSummaries+'ExecutiveSummary.csv', 'w') as fSum:
-    fSum.write('#Summary of results from all benchmarks\n')
-    fSum.write('DictUsed,EnrichmentSetUsed,TissuesTested,GenesTested,TissuesReturned,AvgFold,AvgQ\n')
-    
-
-
+#Make all the necessary dirs if they don't already exist
 if not os.path.exists(dirSummaries):
     os.makedirs(dirSummaries)
-    
+
+if not os.path.exists(dirHGT25):
+    os.makedirs(dirHGT25)
+        
+if not os.path.exists(dirHGT50):
+    os.makedirs(dirHGT50)
+
 if not os.path.exists(dirAnalyses):
     os.makedirs(dirAnalyses)
 
+#Make the file that will hold the summaries and make the columns. 
+with open(dirSummaries+'ExecutiveSummary.csv', 'w') as fSum:
+    fSum.write('#Summary of results from all benchmarks\n')
+    fSum.write('DictUsed,EnrichmentSetUsed,TissuesTested,GenesTested,TissuesReturned,AvgFold,AvgQ\n')
+
+#==============================================================================
+#==============================================================================
+# # Perform the bulk of the analysis, run every single dictionary on every set
+#==============================================================================
+#==============================================================================
 i= 0
 #look in the dictionaries
 for folder in os.walk(path_dicts):
     #open each one
     for f_dict in folder[2]:
+        
         tissue_df= pd.read_csv(path_dicts+f_dict)
         dname= int(f_dict[:-4])
         ntiss= len(tissue_df.columns)
@@ -74,7 +91,7 @@ for folder in os.walk(path_dicts):
                     fSum.write(s)
                     fSum.write('\n')
     
-#df_analysis.to_csv('../output/'+f+f_dict[:-4])
+#Print summary to csv
 df_summary= pd.read_csv(dirSummaries+'ExecutiveSummary.csv', comment= '#')
 
 #some entries contain nulls. before I remove them, I can inspect them
@@ -83,21 +100,19 @@ indexFold = df_summary['AvgFold'].index[df_summary['AvgFold'].apply(np.isnan)]
 indexQ = df_summary['AvgQ'].index[df_summary['AvgQ'].apply(np.isnan)]
 df_summary.ix[indexFold[0]]
 df_summary.ix[indexQ[5]]
+
+
 #kill all nulls!
 df_summary.dropna(inplace= True)
-
+#calculate fraction of tissues that tested significant in each run
 df_summary['fracTissues']= df_summary['TissuesReturned']/df_summary['TissuesTested']
-bins= np.floor(np.sqrt(len(df_summary[df_summary.DictUsed==10])))
 
-groupbydict= df_summary.groupby('DictUsed')
 
-groupbydict.plot(x= 'fracTissues', kind= 'kde')
-
-df_summary[df_summary.DictUsed==10].hist('TissuesReturned', bins= bins)
-df_summary[df_summary.DictUsed==25].hist('TissuesReturned', bins= bins)
-df_summary[df_summary.DictUsed==50].hist('TissuesReturned', bins= bins)
-df_summary[df_summary.DictUsed==100].hist('TissuesReturned', bins= bins)
-df_summary[df_summary.DictUsed==200].hist('TissuesReturned', bins= bins)
+#==============================================================================
+#==============================================================================
+# # Plot summary graphs
+#==============================================================================
+#==============================================================================
 
 #KDE of the fraction of all tissues that tested significant
 df_summary[df_summary.DictUsed==10]['fracTissues'].plot('kde', label= '10', color= '#1b9e77', lw= 5)
@@ -139,23 +154,43 @@ plt.savefig(dirSummaries+'avgFoldChangeKDE.png')
 plt.close()
 
 
-df_summary[df_summary.DictUsed==10]['TissuesTested'].unique()
-df_summary[df_summary.DictUsed==25]['TissuesTested'].unique()
-df_summary[df_summary.DictUsed==50]['TissuesTested'].unique()
-df_summary[df_summary.DictUsed==100]['TissuesTested'].unique()
-df_summary[df_summary.DictUsed==200]['TissuesTested'].unique()
 
-df_summary[df_summary.DictUsed==10].hist('AvgQ', bins= bins)
-df_summary[df_summary.DictUsed==25].hist('AvgQ', bins= bins)
-df_summary[df_summary.DictUsed==50].hist('AvgQ', bins= bins)
-df_summary[df_summary.DictUsed==100].hist('AvgQ', bins= bins)
-df_summary[df_summary.DictUsed==200].hist('AvgQ', bins= bins)
+def line_prepender(filename, line):
+    """
+    Given a filename, opens it and prepends the line 'line' 
+    at the beginning o fthe file
+    """
+    with open(filename, 'r+') as f:
+        content = f.read()
+        f.seek(0, 0)
+        f.write(line.rstrip('\r\n') + '\n' + content)
         
-singleton= ['WBGene00001187']
-tissue_df= pd.read_csv('../input/dictionary.csv')
-
-#x='syncytium(WBbt:0008074)'
-#n= 0
-#print(stats.hypergeom.sf(n, tg, s[x], 1))
-#print(scipy.misc.comb(s[x], n) * scipy.misc.comb(tg - s[x], 1-n) / scipy.misc.comb(tg, 1))
-
+        
+#==============================================================================
+#==============================================================================
+# # Detailed analysis of 25 and 50 genes per node dictionaries
+#==============================================================================
+#==============================================================================
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25.csv')
+for fodder in os.walk(path_sets):
+   for f_set in fodder[2]:
+       df= pd.read_csv(path_sets + f_set)
+       short_name= f_set[16:len(f_set)-16]
+       test= df.gene.values
+       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
+       df_analysis.to_csv(dirHGT25+short_name+'.csv')
+       line= '#' + short_name+'\n'
+       line_prepender(dirHGT25+short_name+'.csv', line)
+       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25)
+               
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/50.csv')
+for fodder in os.walk(path_sets):
+   for f_set in fodder[2]:
+       df= pd.read_csv(path_sets + f_set)
+       short_name= f_set[16:len(f_set)-16]
+       test= df.gene.values
+       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
+       df_analysis.to_csv(dirHGT50+short_name+'.csv')
+       line= '#' + short_name+'\n'
+       line_prepender(dirHGT50+short_name+'.csv', line)
+       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT50)

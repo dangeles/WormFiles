@@ -25,6 +25,8 @@ dirOutput= '../output/'
 dirSummaries= '../output/SummaryInformation/'
 dirAnalyses= '../output/Analyses'
 dirHGT25= '../output/HGT25Results/'
+dirHGT25_any= '../output/HGT25_any_Results/'
+dirHGT25_avg= '../output/HGT25_avg_Results/'
 dirHGT50= '../output/HGT50Results/'
 
 #open the relevant file
@@ -44,6 +46,12 @@ if not os.path.exists(dirSummaries):
 
 if not os.path.exists(dirHGT25):
     os.makedirs(dirHGT25)
+    
+if not os.path.exists(dirHGT25_any):
+    os.makedirs(dirHGT25_any)
+    
+if not os.path.exists(dirHGT25_avg):
+    os.makedirs(dirHGT25_avg)
         
 if not os.path.exists(dirHGT50):
     os.makedirs(dirHGT50)
@@ -177,7 +185,7 @@ for fodder in os.walk(path_sets):
        df= pd.read_csv(path_sets + f_set)
        short_name= f_set[16:len(f_set)-16]
        test= df.gene.values
-       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
+       df_analysis= hgt.implement_hypergmt_enrichment_tool(test, tissue_df, aname= short_name)
        df_analysis.to_csv(dirHGT25+short_name+'.csv')
        line= '#' + short_name+'\n'
        line_prepender(dirHGT25+short_name+'.csv', line)
@@ -194,3 +202,28 @@ for fodder in os.walk(path_sets):
        line= '#' + short_name+'\n'
        line_prepender(dirHGT50+short_name+'.csv', line)
        hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT50)
+
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25_any.csv')
+for fodder in os.walk(path_sets):
+   for f_set in fodder[2]:
+       df= pd.read_csv(path_sets + f_set)
+       short_name= f_set[16:len(f_set)-16]
+       test= df.gene.values
+       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
+       df_analysis.to_csv(dirHGT25_any+short_name+'.csv')
+       line= '#' + short_name+'\n'
+       line_prepender(dirHGT50+short_name+'.csv', line)
+       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25_any)
+
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25_avg.csv')
+for fodder in os.walk(path_sets):
+   for f_set in fodder[2]:
+       df= pd.read_csv(path_sets + f_set)
+       short_name= f_set[16:len(f_set)-16]
+       test= df.gene.values
+       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
+       df_analysis.to_csv(dirHGT25_avg+short_name+'.csv')
+       line= '#' + short_name+'\n'
+       line_prepender(dirHGT50+short_name+'.csv', line)
+       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25_avg)
+

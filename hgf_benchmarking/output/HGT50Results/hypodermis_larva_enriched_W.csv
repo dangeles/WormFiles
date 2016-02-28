@@ -1,4 +1,6 @@
 #hypodermis_larva_enriched_W
+#hypodermis_larva_enriched_W
+#hypodermis_larva_enriched_W
 ,Tissue,Expected,Observed,Fold Change,Q value
 0,hyp7 syncytium(WBbt:0005734),9.074792243767313,30.0,3.305860805860806,5.282175264394867e-08
 1,hypodermis(WBbt:0005733),92.5999208547685,177.0,1.911448717948718,5.545118549631394e-23

@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import os
 
 #tissue dictionary to use
-tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25.csv')
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot100.thresh1.methodavg.csv')
 
 #rna-seq datasets to reanalyze
 #Bacterial
@@ -100,6 +100,8 @@ for i, df in enumerate(Ldf):
         y= tissue_df[tissue_df.wbid.isin(x)].wbid.unique().shape[0]
         print('Number of genes used for analysis ', y)
         print('\n')
+        print('tissue_df')
+        print(tissue_df.head())
         df_res= hgt.implement_hypergmt_enrichment_tool(fname + direction,x, tissue_df)
         hgt.plotting_and_formatting(df_res, ytitle= '{0}, {1}'.format(fname, direction), 
                                     dirGraphs= dirGraphs)

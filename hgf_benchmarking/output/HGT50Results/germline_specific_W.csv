@@ -1,4 +1,6 @@
 #germline_specific_W
+#germline_specific_W
+#germline_specific_W
 ,Tissue,Expected,Observed,Fold Change,Q value
 0,male gonad(WBbt:0006794),10.902255639097746,21.0,1.9262068965517238,0.040694343569400396
 1,oocyte(WBbt:0006797),15.917293233082706,40.0,2.512990080302315,3.4653159329081693e-07

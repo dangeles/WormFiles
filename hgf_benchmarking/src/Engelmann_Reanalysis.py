@@ -28,7 +28,7 @@ import os
 
 #tissue dictionary to use
 tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot100.thresh1.methodavg.csv')
-
+tissue_df.drop('C. elegans Cell and Anatomy WBbt:0000100', axis= 1, inplace= True)
 #rna-seq datasets to reanalyze
 #Bacterial
 dfLum= pd.read_csv('../input/luminescens_Engelmann_2011.csv')
@@ -70,14 +70,6 @@ f= lambda x, y: (names.HumanReadable.isin(x[y]))
 g= lambda x, y: (names.GeneName.isin(x[y]))
 
 
-
-
-
-
-
-
-
-
 #==============================================================================
 #==============================================================================
 # # Engelmann Analysis
@@ -89,38 +81,46 @@ Ldf= [dfLum, dfMarc, dfFaec, dfHarp, dfCon]
 Ldirection= ['Infection_upregulated', 'Infection_downregulated']
 
 #direction specific
+n_genes= []
 for i, df in enumerate(Ldf):
     fname= Lnames[i]
     for direction in Ldirection:
         ind= g(df[df[direction] == 1.0], 'SequenceNameGene')
-#        ind2= f(df[df[direction]== 1.0])
         x= names[ind].WBID
+        
+        print('---------')
         print(fname + ' ' + direction)
         print('Number of genes submitted for analysis ', len(x))
         y= tissue_df[tissue_df.wbid.isin(x)].wbid.unique().shape[0]
         print('Number of genes used for analysis ', y)
         print('\n')
-        print('tissue_df')
-        print(tissue_df.head())
-        df_res= hgt.implement_hypergmt_enrichment_tool(fname + direction,x, tissue_df)
-        hgt.plotting_and_formatting(df_res, ytitle= '{0}, {1}'.format(fname, direction), 
-                                    dirGraphs= dirGraphs)
+        
+        df_res, unused= hgt.enrichment_analysis(x, tissue_df, show= False)
+#        hgt.plot_enrichment_results(df_res, title= '{0}, {1}'.format(fname, direction), 
+#                                    dirGraphs= dirGraphs)
+        n_genes.append(['{0}, {1}'.format(fname, direction), y, len(unused)])
+#        break
+#    break
+print('---------')
+print('---------')
+print('---------')
+print('---------')
 
 #direction agnostic
 for i, df in enumerate(Ldf):
     fname= Lnames[i]
     ind1= g(df[ df[Ldirection[0]] == 1.0],  'SequenceNameGene')
-#    ind2= f(df[ df[Ldirection[0]]== 1.0] )
     ind3= g(df[ df[Ldirection[1]] == 1.0],'SequenceNameGene' )
-#    ind4= f(df[ df[Ldirection[1]]== 1.0] )
     x= names[(ind1) | (ind3)].WBID
+    
     print(fname)
     print('Number of genes submitted for analysis ', len(x))
     y= tissue_df[tissue_df.wbid.isin(x)].wbid.unique().shape[0]
     print('Number of genes used for analysis ', y)
     print('\n')
-    df_res= hgt.implement_hypergmt_enrichment_tool(fname,x, tissue_df)
-    hgt.plotting_and_formatting(df_res, ytitle= '{0}'.format(fname), dirGraphs= dirGraphs)
+    
+    df_res, unused= hgt.enrichment_analysis(x, tissue_df, show= False)
+    hgt.plot_enrichment_results(df_res, title= '{0}'.format(fname), dirGraphs= dirGraphs)
 
 
 #==============================================================================
@@ -132,6 +132,15 @@ for i, df in enumerate(Ldf):
 sin_ps= ['pval_Bthu', 'pval_Saur', 'pval_Smar', 'pval_Xnem']
 sin_fs= ['log2FC_Bthu','log2FC_Saur','log2FC_Smar','log2FC_Xnem']
 
+print('---------')
+print('---------')
+print('---------')
+print('---------')
+print('Sinha Begins Here')
+print('---------')
+print('---------')
+print('---------')
+print('---------')
 
 #direction agnostic
 for pval in sin_ps:
@@ -146,10 +155,15 @@ for pval in sin_ps:
     y= tissue_df[tissue_df.wbid.isin(x)].wbid.unique().shape[0]
     print('Number of genes used for analysis ', y)
     print('\n')
-    df_res= hgt.implement_hypergmt_enrichment_tool(fname + direction,x, tissue_df)
-    hgt.plotting_and_formatting(df_res, 
-        ytitle= 'Sinha 2102, {0}'.format(fname), dirGraphs= dirGraphs)    
+    df_res, unused= hgt.enrichment_analysis(x, tissue_df, show= False)
+    hgt.plot_enrichment_results(df_res, 
+        title= 'Sinha 2102, {0}'.format(fname), dirGraphs= dirGraphs)    
 
+print('---------')
+print('---------')
+print('---------')
+print('---------')
+print('---------')
 
 #direction specific
 for i, pval in enumerate(sin_ps):
@@ -162,7 +176,6 @@ for i, pval in enumerate(sin_ps):
             
         sig = (dfSin[pval] < 0.05)
         fval= (i*dfSin[sin_fs[i]] > 0)
-        
         ind= g(dfSin[sig  & fval], 'Gene ID')
         ind2= f(dfSin[dfSin[pval] < 0.05], 'Gene ID')
         x= names[ind | ind2].WBID
@@ -172,9 +185,10 @@ for i, pval in enumerate(sin_ps):
         y= tissue_df[tissue_df.wbid.isin(x)].wbid.unique().shape[0]
         print('Number of genes used for analysis ', y)
         print('\n')
-        df_res= hgt.implement_hypergmt_enrichment_tool(fname + direction,x, tissue_df)
-        hgt.plotting_and_formatting(df_res, 
-            ytitle= 'Sinha, 2012 {0}'.format(fname), dirGraphs= dirGraphs)    
+        
+        df_res, unused= hgt.enrichment_analysis(x, tissue_df, show= False)
+        hgt.plot_enrichment_results(df_res, 
+            title= 'Sinha, 2012 {0}'.format(fname), dirGraphs= dirGraphs)    
 
  
 

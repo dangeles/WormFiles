@@ -59,6 +59,7 @@ dfBetaA.sort_values('target_id', inplace= True)
 dfBetaG.sort_values('target_id', inplace= True)
 dfBetaAG.sort_values('target_id', inplace= True)
 dfLRT.sort_values('target_id', inplace= True)
+
 #gold standard datasets
 dfDaf12= pd.read_csv('../input/daf12genes.csv')
 dfDaf16= pd.read_csv('../input/daf16genes.csv')
@@ -100,7 +101,8 @@ dfLifespanGenes= pd.read_csv('../input/lifespan gene list complete.csv')
 
 #tissue dictionary-- please cite David Angeles et al TEA publication (forthcoming)
 #if using the enrichment tool 
-tissue_df= pd.read_csv("../input/dictionary.csv")
+tissue_df= pd.read_csv("../input/annot50.thresh0.9.methodany.csv")
+tissue_df.drop('C. elegans Cell and Anatomy WBbt:0000100', axis= 1, inplace= True)
 
 
 
@@ -327,8 +329,7 @@ def direction_specific_tissue_analysis(anames, fnames, df, Lind, genes='ens_gene
     for i, aname in enumerate(anames):
         fname= fnames[i]
         ind= inds[i]
-        df_results= hgt.implement_hypergmt_enrichment_tool(aname, 
-        df[ind][genes], tissue_df, qvalEn)
+        df_results, unused= hgt.enrichment_analysis(df[ind][genes], tissue_df, qvalEn, show= False)
 
         #save results to csv file
         df_results.to_csv('../output/EnrichmentAnalysisResults/'+fname, index= False)
@@ -336,7 +337,7 @@ def direction_specific_tissue_analysis(anames, fnames, df, Lind, genes='ens_gene
         line= '#' + aname+'\n'
         rsq.line_prepender('../output/EnrichmentAnalysisResults/'+fname, line)
         #plot top fold change tissues
-        hgt.plotting_and_formatting(df_results, ytitle= aname)
+        hgt.plot_enrichment_results(df_results, title= aname, dirGraphs= dirGraphs)
  
 
 

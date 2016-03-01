@@ -14,6 +14,7 @@ import importlib as imp
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import re
 imp.reload(hgt)
 
 
@@ -24,45 +25,28 @@ pd.set_option('display.float_format', lambda x:'%f'%x)
 dirOutput= '../output/'
 dirSummaries= '../output/SummaryInformation/'
 dirAnalyses= '../output/Analyses'
-dirHGT25= '../output/HGT25Results/'
 dirHGT25_any= '../output/HGT25_any_Results/'
 dirHGT25_avg= '../output/HGT25_avg_Results/'
-dirHGT50= '../output/HGT50Results/'
+dirHGT50_any= '../output/HGT50_any_Results/'
+dirHGT50_avg= '../output/HGT50_avg_Results/'
+dirHGT100_any= '../output/HGT100_any_Results/'
 
+DIRS= [dirOutput, dirSummaries, dirHGT25_any, dirHGT25_avg,
+       dirHGT50_any, dirHGT50_avg, dirHGT100_any]
 #open the relevant file
 path_sets= '../input/genesets_golden/'
 path_dicts= '../input/WS252AnatomyDictionary/'
 
 
-#Make the dataframe to know how many tissues are being tested
-a= [10, 25, 50, 100]
-b= [None]*4
-tissue_numbers_df= pd.DataFrame(index= a, columns= ['No. of Tissues'])
-
-
 #Make all the necessary dirs if they don't already exist
-if not os.path.exists(dirSummaries):
-    os.makedirs(dirSummaries)
-
-if not os.path.exists(dirHGT25):
-    os.makedirs(dirHGT25)
-    
-if not os.path.exists(dirHGT25_any):
-    os.makedirs(dirHGT25_any)
-    
-if not os.path.exists(dirHGT25_avg):
-    os.makedirs(dirHGT25_avg)
-        
-if not os.path.exists(dirHGT50):
-    os.makedirs(dirHGT50)
-
-if not os.path.exists(dirAnalyses):
-    os.makedirs(dirAnalyses)
+for d in DIRS:
+    if not os.path.exists(d):
+        os.makedirs(d)
 
 #Make the file that will hold the summaries and make the columns. 
 with open(dirSummaries+'ExecutiveSummary.csv', 'w') as fSum:
     fSum.write('#Summary of results from all benchmarks\n')
-    fSum.write('DictUsed,EnrichmentSetUsed,TissuesTested,GenesTested,TissuesReturned,AvgFold,AvgQ\n')
+    fSum.write('NoAnnotations,Threshold,Method,EnrichmentSetUsed,TissuesTested,GenesSubmitted,TissuesReturned,GenesUsed,AvgFold,AvgQ\n')
 
 #==============================================================================
 #==============================================================================
@@ -74,11 +58,17 @@ i= 0
 for folder in os.walk(path_dicts):
     #open each one
     for f_dict in folder[2]:
-        
+        if f_dict == '.DS_Store':
+            continue
         tissue_df= pd.read_csv(path_dicts+f_dict)
-        dname= int(f_dict[:-4])
+        
+        #tobedropped when tissue dictionary is corrected
+        tissue_df.drop('C. elegans Cell and Anatomy WBbt:0000100', axis= 1, inplace= True)
+        annot, thresh= re.findall(r"[-+]?\d*\.\d+|\d+", f_dict)    
+        annot= int(annot); thresh= float(thresh) #typecasting
+        method= f_dict[-7:-4]
+        
         ntiss= len(tissue_df.columns)
-        tissue_numbers_df.loc[dname, 'No. of Tissues']= ntiss
         
         #open each enrichment set
         for fodder in os.walk(path_sets):
@@ -88,13 +78,15 @@ for folder in os.walk(path_dicts):
                 ntest= len(test)
                 short_name= f_set[16:len(f_set)-16]
                 
-                df_analysis= \
-                hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df, alpha= 0.05)
+                df_analysis, unused= \
+                hgt.enrichment_analysis(test, tissue_df, alpha= 0.05, show= False)
                 
-                nana= len(df_analysis)                
+                nana= len(df_analysis) #len of results
+                nun= len(unused) #number of genes dropped
                 avf= df_analysis['Fold Change'].mean()
                 avq= df_analysis['Q value'].mean()
-                s= '{0},{1},{2},{3},{4},{5},{6}'.format(dname, f_set, ntiss, ntest, nana, avf,avq)
+                s= '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}'.format(
+                annot, thresh, method, f_set, ntiss, ntest, nana, ntest-nun, avf,avq)
                 with open(dirSummaries+'ExecutiveSummary.csv', 'a+') as fSum:
                     fSum.write(s)
                     fSum.write('\n')
@@ -115,49 +107,61 @@ df_summary.dropna(inplace= True)
 #calculate fraction of tissues that tested significant in each run
 df_summary['fracTissues']= df_summary['TissuesReturned']/df_summary['TissuesTested']
 
-
+df_summary.sort_values(['NoAnnotations', 'Threshold', 'Method'], inplace= True)
 #==============================================================================
 #==============================================================================
 # # Plot summary graphs
 #==============================================================================
 #==============================================================================
+sel= lambda x, y, z: (df_summary.NoAnnotations == x) & (df_summary.Threshold == y) & (df_summary.Method == z)
+
 
 #KDE of the fraction of all tissues that tested significant
-df_summary[df_summary.DictUsed==10]['fracTissues'].plot('kde', label= '10', color= '#1b9e77', lw= 5)
-df_summary[df_summary.DictUsed==25]['fracTissues'].plot('kde', label= '25', color= '#d95f02', lw= 5)
-df_summary[df_summary.DictUsed==50]['fracTissues'].plot('kde', label= '50', color= '#7570b3', lw= 5)
-df_summary[df_summary.DictUsed==100]['fracTissues'].plot('kde', label= '100', color= '#e7298a', lw= 5)
-df_summary[df_summary.DictUsed==200]['fracTissues'].plot('kde', label= '200', color= '#66a61e', lw= 5)
+cols= ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e'] #used with varying colors
+ls= ['-', '--', ':'] # used with varying thresh
+thresh= df_summary.Threshold.unique()
+NoAnnotations= df_summary.NoAnnotations.unique()
+
+def resplot(column, method= 'any'):
+    for j, annots in enumerate(NoAnnotations):
+        for i, threshold in enumerate(thresh):
+            df_summary[sel(annots, threshold, method)][column].plot('kde', 
+                            color= cols[j], ls= ls[i], lw= 4, 
+                            label= 'Annotation Cut-off: {0}, Threshold: {1}'.format(annots, threshold))
+
+
+
+resplot('fracTissues')
 plt.xlabel('Fraction of all tissues that tested significant')
 plt.xlim(0, 1)
 plt.title('KDE Curves for all dictionaries, benchmarked on all gold standards')
-plt.legend(['10', '25', '50', '100', '200'])
-plt.savefig(dirSummaries+'fractissuesKDE.png')
+plt.legend()
+plt.savefig(dirSummaries+'fractissuesKDE_method=any.png')
 plt.close()
 
-#KDE of the fraction of avgq
-df_summary[df_summary.DictUsed==10]['AvgQ'].plot('kde', label= '10', color= '#1b9e77', lw= 5)
-df_summary[df_summary.DictUsed==25]['AvgQ'].plot('kde', label= '25', color= '#d95f02', lw= 5)
-df_summary[df_summary.DictUsed==50]['AvgQ'].plot('kde', label= '50', color= '#7570b3', lw= 5)
-df_summary[df_summary.DictUsed==100]['AvgQ'].plot('kde', label= '100', color= '#e7298a', lw= 5)
-df_summary[df_summary.DictUsed==200]['AvgQ'].plot('kde', label= '200', color= '#66a61e', lw= 5)
-plt.xlabel('AvgQ value')
+resplot('AvgQ', method= 'avg')
+plt.xlabel('Fraction of all tissues that tested significant')
 plt.xlim(0, 0.05)
 plt.title('KDE Curves for all dictionaries, benchmarked on all gold standards')
-plt.legend(['10', '25', '50', '100', '200'])
-plt.savefig(dirSummaries+'avgQKDE.png')
+plt.legend()
+plt.savefig(dirSummaries+'avgQKDE_method=avg.png')
+plt.close()
+
+
+resplot('AvgQ')
+plt.xlabel('AvgQ value')
+plt.xlim(0,.05)
+plt.title('KDE Curves for all dictionaries, benchmarked on all gold standards')
+plt.legend()
+plt.savefig(dirSummaries+'avgQKDE_method=any.png')
 plt.close()
 
 #KDE of the fraction of avgFold
-df_summary[df_summary.DictUsed==10]['AvgFold'].plot('kde', label= '10', color= '#1b9e77', lw= 5)
-df_summary[df_summary.DictUsed==25]['AvgFold'].plot('kde', label= '25', color= '#d95f02', lw= 5)
-df_summary[df_summary.DictUsed==50]['AvgFold'].plot('kde', label= '50', color= '#7570b3', lw= 5)
-df_summary[df_summary.DictUsed==100]['AvgFold'].plot('kde', label= '100', color= '#e7298a', lw= 5)
-df_summary[df_summary.DictUsed==200]['AvgFold'].plot('kde', label= '200', color= '#66a61e', lw= 5)
+resplot('AvgFold')
 plt.xlabel('Avg Fold Change value')
 plt.xlim(0, 15)
 plt.title('KDE Curves for all dictionaries, benchmarked on all gold standards')
-plt.legend(['10', '25', '50', '100', '200'])
+plt.legend()
 plt.savefig(dirSummaries+'avgFoldChangeKDE.png')
 plt.close()
 
@@ -179,51 +183,45 @@ def line_prepender(filename, line):
 # # Detailed analysis of 25 and 50 genes per node dictionaries
 #==============================================================================
 #==============================================================================
-tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25.csv')
-for fodder in os.walk(path_sets):
-   for f_set in fodder[2]:
-       df= pd.read_csv(path_sets + f_set)
-       short_name= f_set[16:len(f_set)-16]
-       test= df.gene.values
-       df_analysis= hgt.implement_hypergmt_enrichment_tool(test, tissue_df, aname= short_name)
-       df_analysis.to_csv(dirHGT25+short_name+'.csv')
-       line= '#' + short_name+'\n'
-       line_prepender(dirHGT25+short_name+'.csv', line)
-       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25)
+def walker(tissue_df, directory):
+   tissue_df.drop('C. elegans Cell and Anatomy WBbt:0000100', axis= 1, inplace= True)
+   for fodder in os.walk(path_sets):
+       for f_set in fodder[2]:
+           df= pd.read_csv(path_sets + f_set)
+           short_name= f_set[16:len(f_set)-16]
+           test= df.gene.values
+           df_analysis, unused= hgt.enrichment_analysis(test, tissue_df, show= False)
+           if df.empty == False:
+               df_analysis.to_csv(directory+short_name+'.csv')
+               line= '#' + short_name+'\n'
+               line_prepender(directory+short_name+'.csv', line)
+               hgt.plot_enrichment_results(df_analysis, title= short_name, dirGraphs= directory)
+           
+        
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot25.thresh0.9.methodany.csv')
+walker(tissue_df, dirHGT25_any)
                
-tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/50.csv')
-for fodder in os.walk(path_sets):
-   for f_set in fodder[2]:
-       df= pd.read_csv(path_sets + f_set)
-       short_name= f_set[16:len(f_set)-16]
-       test= df.gene.values
-       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
-       df_analysis.to_csv(dirHGT50+short_name+'.csv')
-       line= '#' + short_name+'\n'
-       line_prepender(dirHGT50+short_name+'.csv', line)
-       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT50)
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot50.thresh0.9.methodany.csv')
+walker(tissue_df, dirHGT50_any)
 
-tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25_any.csv')
-for fodder in os.walk(path_sets):
-   for f_set in fodder[2]:
-       df= pd.read_csv(path_sets + f_set)
-       short_name= f_set[16:len(f_set)-16]
-       test= df.gene.values
-       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
-       df_analysis.to_csv(dirHGT25_any+short_name+'.csv')
-       line= '#' + short_name+'\n'
-       line_prepender(dirHGT50+short_name+'.csv', line)
-       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25_any)
 
-tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/25_avg.csv')
-for fodder in os.walk(path_sets):
-   for f_set in fodder[2]:
-       df= pd.read_csv(path_sets + f_set)
-       short_name= f_set[16:len(f_set)-16]
-       test= df.gene.values
-       df_analysis= hgt.implement_hypergmt_enrichment_tool(short_name, test, tissue_df)
-       df_analysis.to_csv(dirHGT25_avg+short_name+'.csv')
-       line= '#' + short_name+'\n'
-       line_prepender(dirHGT50+short_name+'.csv', line)
-       hgt.plotting_and_formatting(df_analysis, ytitle= short_name, dirGraphs= dirHGT25_avg)
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot100.thresh0.9.methodany.csv')
+walker(tissue_df, dirHGT100_any)
+
+
+tissue_df= pd.read_csv('../input/WS252AnatomyDictionary/annot25.thresh0.9.methodavg.csv')
+walker(tissue_df, dirHGT25_avg)
+
+
+with open('../output/SummaryInformation/TissueNumbers.csv', 'w') as f:
+    f.write('No. Of Annotations,Threshold,Method,No. Of Tissues in Dictionary\n')
+    for annots in NoAnnotations:
+        for threshold in thresh:
+            for method in ['any', 'avg']:
+                x= df_summary[sel(annots, threshold, method)].TissuesTested.unique()[0]
+                f.write('{0},{1},{2},{3}\n'.format(annots, threshold, method, x))
+
+
+
+
 

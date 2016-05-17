@@ -1,0 +1,5 @@
+Brood Assay Wizard Tool.
+Author: David Angeles-Albores.
+-----------
+Passaged plates for fog2_associated_genes on 18:17 12/04/2016 (dd/mm/yy).
+ There were 24 lines and 3 replicates per line

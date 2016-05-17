@@ -1,0 +1,13 @@
+run_accession	genotype	age	sperm	sample
+JKA_15344	mt	old	hollow	JKA1
+JKA_15345	mt	old	hollow	JKA2
+JKA_15346	mt	old	hollow	JKA3
+JKY_15044	mt	adulty	hollow	JKY1
+JKY_15045	mt	adulty	hollow	JKY2
+JKY_15046	mt	adulty	hollow	JKY3
+N2A_14948	2n	old	hollow	N2A1
+N2A_14949	2n	old	hollow	N2A2
+N2A_14950	2n	old	hollow	N2A3
+N2Y_14945	2n	adulty	full	N2Y1
+N2Y_14946	2n	adulty	full	N2Y2
+N2Y_14947	2n	adulty	full	N2Y3

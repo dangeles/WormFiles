@@ -1,0 +1,16 @@
+PCR-Wizard Tool.
+Author: David Angeles-Albores.
+-----------
+NPL40_CRISPR_Genotyping
+Date dd/mm/yy 11/04/2016
+-----------
+This is a master mix for 50 rxns each 25µL
+-----------
+Make the following mix (extra 20% added to prevent error):
+Add 75.00 premixed primers 10uM
+Add 30.00 10mM dNTPs
+Add 0.00 dmso
+Add 150.00 buffer
+Add 1207.50 water
+Add 7.50 enzyme
+Add 30.0 dna

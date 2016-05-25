@@ -103,6 +103,7 @@ plt.savefig(output_path + 'boxplot_gene_heat_shock_controls_by_date.pdf')
 plt.show()
 
 
+
 # first, identify outliers in the data
 # in theory, it should be binomial distributed, and since
 # we are using a normal approximation

@@ -91,8 +91,8 @@ class PCR(object):
         """
         totvol = self.volume*self.n
         sum_ingredients = (self.buffer + self.dntp + self.enzyme +
-                           self.primers + self.dmso + self.dna)
-        self.water = self.volume - sum_ingredients*self.volume
+                           self.primers + self.dmso)
+        self.water = self.volume - sum_ingredients*self.volume - self.dna
 
         s = 'Make the following mix (extra 20% added to prevent error):\n'
         print(s)
@@ -115,8 +115,8 @@ class PCR(object):
         print('Add {0:2.2f} enzyme'.format(self.enzyme*totvol))
         s6 = 'Add {0:2.2f} enzyme'.format(self.enzyme*totvol)
 
-        print('\nAdd {0:3.3} dna'.format(self.dna*totvol))
-        s7 = '\nAdd {0:3.3} dna\n'.format(self.dna*totvol)
+        print('\nAdd {0:3.3} dna'.format(self.dna))
+        s7 = '\nAdd {0:3.3} dna\n'.format(self.dna)
 
         return s, s1, s2, s3, s4, s5, s6, s7
 
@@ -134,7 +134,8 @@ if __name__ == '__main__':
                         help='volume per reaction, default 25', type=float)
     parser.add_argument('-d', '--dmso', nargs='?', help='Add DMSO, default no')
     parser.add_argument('-dn', '--dna', nargs='?',
-                        help='Volume of DNA per rxn, default 1uL DNA/50uL rxn')
+                        help='Volume of DNA per rxn, default 1uL DNA/50uL rxn',
+                        type=float)
     parser.add_argument('-p', '--print', help='Print', action="store_true")
 
     args = parser.parse_args()
@@ -175,6 +176,7 @@ if __name__ == '__main__':
 
     if args.dna:
         args.dna = float(args.dna)
+        print('--------------->',  args.dna)
         pcr.add_dna(args.dna)
     else:
         pcr.add_dna(1/50)
@@ -190,4 +192,4 @@ if __name__ == '__main__':
     import os
 
     if args.print:
-        os.system("lpr -P Sternberg_Lab ../output/pcr.txt")
+        os.system("lpr -P SternbergLab ../output/pcr.txt")

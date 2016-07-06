@@ -1,16 +1,16 @@
 PCR-Wizard Tool.
 Author: David Angeles-Albores.
 -----------
-pred_amplification_test_60C
-Date dd/mm/yy 07/06/2016
+troubleshooting
+Date dd/mm/yy 06/07/2016
 -----------
-This is a master mix for 3 rxns of 25µL
+This is a master mix for 4 rxns of 10.0µL
 -----------
 Make the following mix (extra 20% added to prevent error):
-Add 4.50 premixed primers 10uM
-Add 1.80 10mM dNTPs
+Add 2.40 premixed primers 10uM
+Add 0.96 10mM dNTPs
 Add 0.00 dmso
-Add 9.00 buffer
-Add 67.05 water
-Add 0.45 enzyme
-Add 2.0 dna
+Add 4.80 buffer
+Add 39.50 water
+Add 0.24 enzyme
+Add 0.02 dna

@@ -58,10 +58,11 @@ class PCR(object):
         if self.name == 'taq':
             self.enzyme = 0.005  # ul enzyme per ul rxn
             self.buffer = 1/10  # buffer is 10x
-
-        if self.name == 'phusion':
+        elif self.name == 'phusion':
             self.enzyme = .01  # ul enzyme per ul rxn
             self.buffer = 1/5  # buffer is 5x
+        else:
+            print('Sorry, I don\'t know how to make that mix yet')
 
     def add_dmso(self):
         """A method to add dmso if it's desired."""
@@ -172,14 +173,13 @@ if __name__ == '__main__':
     pcr.add_enzyme()
 
     if args.dmso:
-        pcr.add_dmso
+        pcr.add_dmso()
 
     if args.dna:
         args.dna = float(args.dna)
-        print('--------------->',  args.dna)
         pcr.add_dna(args.dna)
     else:
-        pcr.add_dna(1/50)
+        pcr.add_dna(1)
 
     # print results, store to file and print file
     s, s1, s2, s3, s4, s5, s6, s7 = pcr.make_mix()

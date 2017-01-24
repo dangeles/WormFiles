@@ -113,8 +113,8 @@ class PCR(object):
         print('Add {0:2.2f} water'.format(self.water*self.n))
         s5 = 'Add {0:2.2f} water\n'.format(self.water*self.n)
 
-        print('Add {0:2.2f} enzyme'.format(self.enzyme*totvol))
-        s6 = 'Add {0:2.2f} enzyme'.format(self.enzyme*totvol)
+        print('Add {0:2.2g} enzyme'.format(self.enzyme*totvol))
+        s6 = 'Add {0:2.2g} enzyme'.format(self.enzyme*totvol)
 
         print('\nAdd {0:3.3} dna'.format(self.dna))
         s7 = '\nAdd {0:3.3} dna\n'.format(self.dna)
